@@ -1,0 +1,26 @@
+[
+  {
+    "incident_id": "INC-1001",
+    "service": "payment-api",
+    "severity": "HIGH",
+    "description": "Payment API experiencing intermittent failures. Correlated with connection-pool exhaustion on db-primary-01.",
+    "status": "OPEN",
+    "created_at": "2026-08-18T10:23:00"
+  },
+  {
+    "incident_id": "INC-1003",
+    "service": "inventory-svc",
+    "severity": "MEDIUM",
+    "description": "inventory-svc unreachable. Network link to server-05 showing 18% packet loss; service marked DOWN by load balancer.",
+    "status": "OPEN",
+    "created_at": "2026-08-18T09:52:00"
+  },
+  {
+    "incident_id": "INC-0997",
+    "service": "search-svc",
+    "severity": "LOW",
+    "description": "search-svc memory growth after cache resize. Monitoring; restart scheduled for next maintenance window.",
+    "status": "RESOLVED",
+    "created_at": "2026-08-17T14:10:00"
+  }
+]

@@ -1,0 +1,570 @@
+<title>Routing Demo Run-of-Show</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#F5F6F8;
+  --card:#FFFFFF;
+  --ink:#171A21;
+  --ink-soft:#39404D;
+  --muted:#6E7683;
+  --rule:#DFE3E9;
+  --rule-soft:#EAEDF1;
+  --accent:#C1401F;
+  --accent-soft:#F6E4DE;
+  --good:#1F6B4A;
+  --good-soft:#E2F0E9;
+  --warn:#8A5A05;
+  --warn-soft:#F8EEDA;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Source Serif 4','Iowan Old Style',Georgia,serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#121419;
+    --card:#191C22;
+    --ink:#E7E9EC;
+    --ink-soft:#B9BFC8;
+    --muted:#8A919C;
+    --rule:#2C313A;
+    --rule-soft:#232830;
+    --accent:#E8724E;
+    --accent-soft:#33201A;
+    --good:#6FC49B;
+    --good-soft:#17281F;
+    --warn:#D8A44E;
+    --warn-soft:#2A2114;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#121419;
+  --card:#191C22;
+  --ink:#E7E9EC;
+  --ink-soft:#B9BFC8;
+  --muted:#8A919C;
+  --rule:#2C313A;
+  --rule-soft:#232830;
+  --accent:#E8724E;
+  --accent-soft:#33201A;
+  --good:#6FC49B;
+  --good-soft:#17281F;
+  --warn:#D8A44E;
+  --warn-soft:#2A2114;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  line-height:1.55;
+  margin:0;
+  padding:0 20px 100px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:920px;margin:0 auto}
+
+/* ---------- masthead ---------- */
+.masthead{padding:60px 0 30px;border-bottom:2px solid var(--ink)}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 14px;
+  display:flex;align-items:center;gap:9px;
+}
+.eyebrow::before{
+  content:"";width:8px;height:8px;border-radius:50%;
+  background:var(--accent);flex:none;
+}
+h1{
+  font-family:var(--sans);font-weight:700;font-size:clamp(34px,5.6vw,52px);
+  line-height:1.04;letter-spacing:-.023em;margin:0 0 18px;text-wrap:balance;
+}
+.standfirst{
+  font-family:var(--serif);font-size:19px;line-height:1.62;color:var(--ink-soft);
+  max-width:60ch;margin:0;
+}
+.meta{
+  display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:28px;
+  font-family:var(--mono);font-size:12px;color:var(--muted);
+}
+.meta b{color:var(--ink);font-weight:600}
+
+/* ---------- generic section ---------- */
+section{margin-top:56px}
+h2{
+  font-family:var(--sans);font-weight:700;font-size:24px;letter-spacing:-.012em;
+  margin:0 0 6px;text-wrap:balance;
+}
+.section-note{
+  font-family:var(--serif);font-size:16.5px;color:var(--ink-soft);
+  margin:0 0 24px;max-width:64ch;
+}
+h3{
+  font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 12px;
+}
+
+/* ---------- callout ---------- */
+.callout{
+  border:1px solid var(--rule);border-left:3px solid var(--accent);
+  background:var(--card);border-radius:3px;padding:20px 24px;margin:24px 0;
+}
+.callout.warn{border-left-color:var(--warn)}
+.callout p{font-family:var(--serif);font-size:16.5px;margin:0;color:var(--ink-soft)}
+.callout p+p{margin-top:11px}
+.callout strong{color:var(--ink);font-weight:600}
+.callout .h{
+  font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 9px;display:block;
+}
+.callout.warn .h{color:var(--warn)}
+
+/* ---------- checklist ---------- */
+.checks{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
+.checks li{
+  display:grid;grid-template-columns:26px 1fr;gap:14px;align-items:start;
+  padding:15px 0;border-bottom:1px solid var(--rule-soft);
+}
+.checks li:first-child{border-top:1px solid var(--rule-soft)}
+.box{
+  width:15px;height:15px;border:1.5px solid var(--muted);border-radius:2px;
+  margin-top:4px;flex:none;
+}
+.checks .t{font-family:var(--sans);font-weight:600;font-size:15px;margin:0 0 3px}
+.checks .d{font-family:var(--serif);font-size:15.5px;color:var(--ink-soft);margin:0}
+.checks code,.rundown code,.qa code,.callout code,.numbers code{
+  font-family:var(--mono);font-size:.87em;background:var(--rule-soft);
+  padding:1px 5px;border-radius:2px;color:var(--ink);
+}
+
+/* ---------- run of show ---------- */
+.scene{
+  background:var(--card);border:1px solid var(--rule);border-radius:3px;
+  margin-bottom:14px;overflow:hidden;
+}
+.scene-head{
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  padding:15px 22px;border-bottom:1px solid var(--rule-soft);
+  background:var(--rule-soft);
+}
+.tc{
+  font-family:var(--mono);font-size:12px;font-weight:600;color:var(--accent);
+  font-variant-numeric:tabular-nums;flex:none;
+}
+.scene-n{
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  font-variant-numeric:tabular-nums;flex:none;
+}
+.scene-title{font-family:var(--sans);font-weight:600;font-size:16px;margin:0}
+.scene-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
+.col{padding:20px 22px}
+.col+.col{border-left:1px solid var(--rule-soft)}
+.col h4{
+  font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 11px;
+}
+.col.screen ul{margin:0;padding-left:17px}
+.col.screen li{
+  font-family:var(--sans);font-size:14.5px;color:var(--ink-soft);
+  margin-bottom:7px;line-height:1.5;
+}
+.col.screen li::marker{color:var(--accent)}
+.say p{
+  font-family:var(--serif);font-size:16.5px;line-height:1.66;color:var(--ink);
+  margin:0 0 12px;
+}
+.say p:last-child{margin-bottom:0}
+.say em{font-style:italic;color:var(--muted)}
+@media(max-width:700px){
+  .scene-body{grid-template-columns:1fr}
+  .col+.col{border-left:none;border-top:1px solid var(--rule-soft)}
+}
+
+/* ---------- numbers table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{
+  text-align:left;padding:12px 18px;border-bottom:1px solid var(--rule-soft);
+  font-size:14.5px;
+}
+th{
+  font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);background:var(--rule-soft);
+}
+td{font-family:var(--sans);color:var(--ink-soft)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+td.name{font-weight:600;color:var(--ink)}
+tr:last-child td{border-bottom:none}
+.hl{color:var(--accent);font-weight:600}
+
+/* ---------- q&a ---------- */
+.qa{display:flex;flex-direction:column;gap:0}
+.qa details{border-bottom:1px solid var(--rule);padding:0}
+.qa details:first-child{border-top:1px solid var(--rule)}
+.qa summary{
+  font-family:var(--sans);font-weight:600;font-size:16px;padding:17px 34px 17px 0;
+  cursor:pointer;list-style:none;position:relative;color:var(--ink);
+}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{
+  content:"+";position:absolute;right:6px;top:15px;
+  font-family:var(--mono);font-size:19px;color:var(--accent);font-weight:400;
+}
+.qa details[open] summary::after{content:"–"}
+.qa summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.qa .a{padding:0 0 20px}
+.qa .a p{font-family:var(--serif);font-size:16.5px;line-height:1.66;color:var(--ink-soft);margin:0 0 11px}
+.qa .a p:last-child{margin-bottom:0}
+.qa .a strong{color:var(--ink);font-weight:600}
+
+/* ---------- avoid list ---------- */
+.avoid{display:grid;gap:11px;margin:0;padding:0;list-style:none}
+.avoid li{
+  display:grid;grid-template-columns:18px 1fr;gap:13px;align-items:start;
+  font-family:var(--serif);font-size:16px;color:var(--ink-soft);line-height:1.58;
+}
+.avoid li::before{
+  content:"✕";font-family:var(--mono);font-size:13px;color:var(--accent);
+  margin-top:2px;font-weight:600;
+}
+.avoid strong{color:var(--ink);font-weight:600;font-family:var(--sans);font-size:15px}
+
+footer{
+  margin-top:64px;padding-top:22px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.7;
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Screen recording · production kit</p>
+  <h1>Routing Demo Run-of-Show</h1>
+  <p class="standfirst">Everything needed to record the cost-aware LLM routing walkthrough: a timed narration script, the exact click path through the dashboard, and the verified numbers to quote — plus the two findings you should address on camera rather than hope nobody notices.</p>
+  <div class="meta">
+    <span>Target runtime <b>6:30</b></span>
+    <span>Scenes <b>7</b></span>
+    <span>Demo URL <b>llm-routing-poc.vercel.app</b></span>
+    <span>Figures verified <b>2026-09-08</b></span>
+  </div>
+</header>
+
+<section>
+  <h2>Before you hit record</h2>
+  <p class="section-note">Two of these are not optional. The Groq free-tier ceiling makes a live experiment run take about three and a half minutes of dead air, and a cold database can make the first page load fail outright.</p>
+
+  <div class="callout warn">
+    <span class="h">Do not run the experiment live on camera</span>
+    <p>On the free Groq plan an 18-query run takes roughly <strong>3m30s</strong>, most of it rate-limit back-off. That is longer than this entire video. The results are already in the production database — open the dashboard and they are simply there.</p>
+    <p>If you want to <em>show</em> a run happening, start it, record ten seconds of the progress bar moving, then cut. Never wait it out.</p>
+  </div>
+
+  <ul class="checks">
+    <li><span class="box"></span><div>
+      <p class="t">Load the dashboard 5 minutes early</p>
+      <p class="d">If the Postgres instance sleeps when idle, the first request wakes it and can be slow or error. Get that out of the way before recording.</p>
+    </div></li>
+    <li><span class="box"></span><div>
+      <p class="t">Confirm the results are showing</p>
+      <p class="d">The overview should show results for all three strategies and the compression panel beneath the comparison table. If it is empty, someone re-ran with a cleared store — you will need to re-run and wait.</p>
+    </div></li>
+    <li><span class="box"></span><div>
+      <p class="t">Close everything with a key in it</p>
+      <p class="d">Terminal, <code>.env</code>, the Vercel dashboard, your password manager. The <code>.env</code> file has live Groq and OpenAI keys in plain text.</p>
+    </div></li>
+    <li><span class="box"></span><div>
+      <p class="t">Hide bookmarks and notifications</p>
+      <p class="d">Browser in a clean window, do-not-disturb on. Zoom the page to about 125% so text is legible after compression.</p>
+    </div></li>
+    <li><span class="box"></span><div>
+      <p class="t">Pre-type the demo query</p>
+      <p class="d">Have <code>What is the current CPU usage of payment-api?</code> ready to paste. Typing on camera is dead time.</p>
+    </div></li>
+  </ul>
+</section>
+
+<section>
+  <h2>The script</h2>
+  <p class="section-note">Left column is what you do; right column is what you say. The narration is written to be read aloud — it is deliberately plainer than written prose. Timings are cumulative.</p>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">01</span><span class="tc">0:00 – 0:40</span>
+      <p class="scene-title">The problem</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <h4>On screen</h4>
+        <ul>
+          <li>Title slide, or the dashboard overview held still</li>
+          <li>Do not click anything yet</li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"Most teams building on large language models send every request to their best available model. It is the safe default, and it is expensive — you pay premium prices for questions that a much smaller model would answer perfectly well."</p>
+        <p>"This project tests a simple claim: that you can cut inference cost substantially without giving up answer quality, by choosing the model per request instead of picking one for everything."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">02</span><span class="tc">0:40 – 1:20</span>
+      <p class="scene-title">The objective</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <ul>
+          <li>Overview page — point at the pull-quote in the hero panel</li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"The objective is not to always use the cheapest model. It is to use the cheapest model that can actually satisfy the requirements of the request."</p>
+        <p>"That distinction matters. A router that just always picks the cheap model would save a lot of money and produce bad answers on the hard questions. So every claim here is measured on two axes at once — what it cost, and how good the answer was."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">03</span><span class="tc">1:20 – 2:10</span>
+      <p class="scene-title">The setup — data and strategies</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <ul>
+          <li>Click <strong>Telemetry data</strong></li>
+          <li>Scroll briefly through logs, then metrics, then incidents</li>
+          <li>Click back to <strong>Experiment results</strong></li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"The test case is an IT operations assistant. It answers questions about simulated telemetry — logs, metrics and incidents from a small microservice estate that is having a bad morning. A batch job overloads the primary database, which exhausts a connection pool, which times out the payment API, which throws 502s on checkout."</p>
+        <p>"There are 36 test questions across three difficulty bands, each with a known correct answer. We run 18 of them, stratified, so every run covers simple, medium and hard."</p>
+        <p>"Three strategies see identical data. <em>No routing</em> sends everything to the premium model — that is the baseline. <em>Rule-based</em> uses keyword heuristics. <em>Intelligent</em> asks a small model to assess the request, then picks the cheapest model that meets every requirement."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">04</span><span class="tc">2:10 – 3:20</span>
+      <p class="scene-title">Live query — the core demo</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <ul>
+          <li>Click <strong>Query console</strong></li>
+          <li>Paste <code>What is the current CPU usage of payment-api?</code></li>
+          <li>Strategy <strong>intelligent</strong> → Send</li>
+          <li>Point at the routing decision panel as it lands</li>
+          <li>Re-send the same query with strategy <strong>none</strong></li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"Let me route one request live. This is a simple factual lookup."</p>
+        <p><em>(after the response)</em> "The router assessed it as low complexity, no reasoning required, and picked the cheap tier — a 20-billion parameter model. It graded 5 out of 5 against the expected answer, and it cost about two hundredths of a cent."</p>
+        <p>"Now the same question with routing switched off, straight to the premium model. Also 5 out of 5 — and about eleven times the cost. Same answer quality, eleven times the price. That gap, repeated across a whole workload, is the entire thesis."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">05</span><span class="tc">3:20 – 4:40</span>
+      <p class="scene-title">The results</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <ul>
+          <li>Back to <strong>Experiment results</strong></li>
+          <li>Hold on the two hero figures</li>
+          <li>Scroll to the strategy comparison table</li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"Here is the full run — 18 questions through all three strategies, every answer graded one to five by an LLM judge against a predefined expected answer."</p>
+        <p>"Intelligent routing cut cost per request by <strong>63 percent</strong> while retaining <strong>96 percent</strong> of baseline quality. In absolute terms, about half a cent per request down to a fifth of a cent."</p>
+        <p>"Those are real dollars on both sides, incidentally. Every model here bills at a published rate, so there is no estimated or subsidised number in that comparison."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">06</span><span class="tc">4:40 – 5:40</span>
+      <p class="scene-title">Where the savings come from</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <ul>
+          <li>Point at <strong>Model utilization</strong></li>
+          <li>Then <strong>Quality by complexity</strong></li>
+          <li>Optionally open <strong>Request log</strong> and scroll</li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"The utilisation breakdown shows why it works. Intelligent routing sent only about a third of requests to the premium model; the rest went to the cheap and mid tiers. The baseline sent 100 percent premium."</p>
+        <p>"And quality holds up across difficulty bands — it is not saving money by quietly failing the hard questions."</p>
+        <p>"One result genuinely surprised me. The mid-tier model averaged <strong>4.80</strong> on the questions it handled — slightly <em>higher</em> than the premium model's 4.71. On this workload, the expensive model is not buying better answers."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-head">
+      <span class="scene-n">07</span><span class="tc">5:40 – 6:30</span>
+      <p class="scene-title">Honest limits and next steps</p>
+    </div>
+    <div class="scene-body">
+      <div class="col screen">
+        <ul>
+          <li>Return to the overview and hold</li>
+        </ul>
+      </div>
+      <div class="col say">
+        <h4>You say</h4>
+        <p>"Two caveats I want to state directly. This is 18 questions on one synthetic dataset — it demonstrates the mechanism, it does not prove a production savings figure."</p>
+        <p>"And the simple keyword router lands within a few points of the intelligent one — on some runs it has even come out ahead. That is noise at this sample size, and the keyword rules are tuned to this dataset's vocabulary — they would not survive contact with real user phrasing. The intelligent router is the one that generalises. But I am not going to pretend the gap is large."</p>
+        <p>"We also measured context compression on top of routing — that is the last slide, and the result is more interesting than a percentage. Next step beyond that is a larger query set and a real workload trace."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Numbers you can quote</h2>
+  <p class="section-note">Pulled from the live production database on 8 September 2026. Request counts are uneven (22 / 18 / 21) because of console tests; savings are computed <em>per request</em>, so that does not distort them, and a fresh run gives an even 18 / 18 / 18. Re-running shifts every value by a point or two.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>Strategy</th><th>Requests</th><th>Cost / request</th><th>Avg quality</th><th>Cost saving</th><th>Quality retained</th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="name">No routing (baseline)</td><td class="n">22</td><td class="n">$0.0053</td><td class="n">4.77</td><td class="n">—</td><td class="n">100%</td></tr>
+        <tr><td class="name">Rule-based</td><td class="n">18</td><td class="n">$0.0022</td><td class="n">4.67</td><td class="n">58.5%</td><td class="n">97.8%</td></tr>
+        <tr><td class="name">Intelligent</td><td class="n">21</td><td class="n">$0.0020</td><td class="n">4.57</td><td class="n hl">62.6%</td><td class="n hl">95.8%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top:30px">Quality by model</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Model</th><th>Tier</th><th>Answers graded</th><th>Avg quality</th></tr></thead>
+      <tbody>
+        <tr><td class="name">openai/gpt-oss-120b</td><td>medium</td><td class="n">15</td><td class="n hl">4.80</td></tr>
+        <tr><td class="name">gpt-4.1</td><td>premium</td><td class="n">31</td><td class="n">4.71</td></tr>
+        <tr><td class="name">openai/gpt-oss-20b</td><td>cheap</td><td class="n">14</td><td class="n">4.43</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top:30px">The single-query moment</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Query Q-01</th><th>Tier used</th><th>Cost</th><th>Quality</th></tr></thead>
+      <tbody>
+        <tr><td class="name">Intelligent routing</td><td>cheap</td><td class="n">$0.000198</td><td class="n">5 / 5</td></tr>
+        <tr><td class="name">No routing</td><td>premium</td><td class="n">$0.002160</td><td class="n">5 / 5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="section-note" style="margin-top:14px">That is <strong>10.9× cheaper at identical graded quality</strong> — the cleanest single illustration in the whole dataset.</p>
+</section>
+
+<section>
+  <h2>If they ask</h2>
+  <p class="section-note">Prepared answers for the questions most likely to come back. The first one is the one I would expect your project manager to spot.</p>
+
+  <div class="qa">
+    <details>
+      <summary>Why isn't the "intelligent" router clearly better than the simple keyword one?</summary>
+      <div class="a">
+        <p>On the live dashboard intelligent saves 62.6% and rule-based 58.5% — but on other runs of the same 18 questions the order has flipped. Three honest reasons, and you should give all three.</p>
+        <p><strong>Sample size.</strong> Eighteen queries. A single question routing differently moves the number by several points, so the gap between the two — in either direction — is not meaningful at this n.</p>
+        <p><strong>The rules are fitted to this dataset.</strong> The keyword heuristics were written against these exact 36 questions. That is close to grading your own homework — they will not transfer to real user phrasing, where the same intent arrives worded fifty different ways.</p>
+        <p><strong>The intelligent router pays a toll.</strong> It spends a small model call on every request to make its decision, and that cost is charged against it in the comparison. The keyword router is free to run.</p>
+        <p>The honest summary: on this dataset the two are within noise of each other; the intelligent router is the one that survives leaving the lab.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Is the quality grading trustworthy? It is an AI grading an AI.</summary>
+      <div class="a">
+        <p>It is an LLM judge, and that is a real limitation worth naming. Two things make it defensible: every question has a <strong>predefined expected answer and grading criteria written in advance</strong>, so the judge is comparing against a fixed reference rather than forming a free opinion. And the same judge, at temperature zero, grades all three strategies — so any bias it has applies equally and the comparison between strategies stays fair.</p>
+        <p>It would not be sufficient for a production quality bar. It is sufficient to detect a strategy that saves money by degrading answers, which is what it is there for.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Would this hold up on our real workload?</summary>
+      <div class="a">
+        <p>Unknown, and worth saying so plainly. The savings depend on the mix of easy versus hard requests. This dataset is roughly 40% simple, 33% medium, 28% hard. A workload that is nearly all hard reasoning will save far less; a support-triage or classification workload would very likely save more.</p>
+        <p>The mechanism is what transfers. The specific percentage does not, until it is measured on real traffic.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What does the routing decision actually look at?</summary>
+      <div class="a">
+        <p>The small router model returns a structured assessment: complexity, whether multi-step reasoning is required, how much context is needed, the quality bar, and any latency requirement. Code then picks the <strong>cheapest configured model that satisfies every one of those constraints</strong> — including hard limits like context window size and a latency ceiling.</p>
+        <p>The model never picks the model. It describes the request; deterministic code does the selection. That keeps the choice auditable, and you can change the tier lineup without retraining or re-prompting anything.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What happens when a provider fails mid-run?</summary>
+      <div class="a">
+        <p>The request retries, then falls back to another tier, and cost is attributed to whichever model actually produced the answer — so a fallback can never understate real spend. Four fallbacks fired during the run you are showing, and none of them are visible in the results.</p>
+        <p>Only a request that exhausts every tier counts as a failure. That is why the comparison has an even 18 / 18 / 18 split rather than gaps.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Did you evaluate context compression — Headroom, TOON?</summary>
+      <div class="a">
+        <p>Both, measured rather than quoted. <strong>TOON</strong> was rejected: on this data it costs 18–28% <em>more</em> tokens than the pipeline's existing line format, because that format is already denser than TOON's tabular encoding. The format the pipeline sends today is itself 25.8% cheaper than the naive JSON dump most teams ship.</p>
+        <p><strong>Headroom</strong> was run as a proper A/B — every query and strategy once uncompressed, once compressed, 108 graded requests. It saves 17.6% of context tokens, about 10% of cost per request. The only transform it finds on this data folds timestamps into a shared prefix. <code>gpt-4.1</code> reads that fine (4.59 → 4.61). The 20B cheap-tier model does not (4.64 → 3.57) — it misreads the incident timeline.</p>
+        <p>So the two levers interact: compression breaks exactly the queries routing sends to the weakest model. The conclusion is a policy, not a switch — compress for the medium and premium tiers, never for the cheap tier. That keeps the saving where it is free and removes the quality hit. It is the next thing to build.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Why these particular models?</summary>
+      <div class="a">
+        <p>Cheap and medium tiers run on Groq — <code>gpt-oss-20b</code> and <code>gpt-oss-120b</code>. Same model family, so the tier difference is genuinely capability and not vendor quirk. Premium is <code>gpt-4.1</code> on OpenAI, and a small <code>gpt-4o-mini</code> does the routing and grading.</p>
+        <p>The tier lineup lives in a single config file. Swapping any model is a one-line change with no code touched — which is the point, because model availability changes constantly.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section>
+  <h2>Do not do these on camera</h2>
+  <ul class="avoid">
+    <li><div><strong>Start a full experiment run and wait.</strong> Three and a half minutes of a progress bar will lose the room, and on the free tier it can look like the app has hung.</div></li>
+    <li><div><strong>Open the terminal or <code>.env</code>.</strong> Live API keys in plain text. If a key appears on screen you must rotate it before publishing the video.</div></li>
+    <li><div><strong>Show the Vercel dashboard.</strong> Environment variables, deployment logs and billing are all one click apart.</div></li>
+    <li><div><strong>Read the cost figures as precise forecasts.</strong> Say "roughly two-thirds" rather than "62.6 percent will be saved". The precision invites a challenge the sample size cannot support.</div></li>
+    <li><div><strong>Claim the premium model is worse.</strong> The mid-tier scoring higher is a genuine and interesting result on <em>this</em> dataset at n=14. It is not a general finding about GPT-4.1.</div></li>
+  </ul>
+</section>
+
+<footer>
+  Figures verified against the live production deployment on 2026-09-08.<br>
+  Re-check the numbers table if the experiment is re-run before recording — clearing the store and running again will shift every value.
+</footer>
+
+</div>

@@ -1,0 +1,70 @@
+# Model tier configuration.
+# Pricing is USD per 1M tokens.
+#
+# cheap/medium run on Groq; premium/router/evaluator on OpenAI. Every price
+# here is a real billed rate, so the cost comparison is actual dollars on both
+# sides - no "reference pricing" asterisk as with OpenRouter's free endpoints.
+#
+# Groq model ids and prices verified against the live /models endpoint and
+# console.groq.com/docs/models on 2026-09-02. Re-verify before quoting numbers.
+#
+# NOTE ON reasoning_effort: the gpt-oss models are reasoning models. Left at
+# their default they spend 170-215 completion tokens on hidden reasoning, which
+# at max_tokens 700 truncates the visible answer mid-sentence (finish_reason
+# "length") or returns nothing at all. "low" cuts that to ~25-30 tokens and
+# returns complete answers. Do not remove it without re-measuring.
+#
+# Groq rate limits (free plan, gpt-oss): 30 RPM, 1K RPD, 8K TPM, 200K TPD.
+# The 8K TPM ceiling puts a ~7.7 minute floor on an 18-query experiment. The
+# Developer plan lifts it. EXPERIMENT_CONCURRENCY defaults to 2 for the free
+# plan; raise it to 8 only after upgrading.
+models:
+  cheap:
+    name: "openai/gpt-oss-20b"
+    provider: groq
+    input_cost_per_1m_tokens: 0.075
+    output_cost_per_1m_tokens: 0.30
+    max_latency_ms: 3000
+    max_context_tokens: 131072
+    params:
+      reasoning_effort: low
+  medium:
+    name: "openai/gpt-oss-120b"
+    provider: groq
+    input_cost_per_1m_tokens: 0.15
+    output_cost_per_1m_tokens: 0.60
+    max_latency_ms: 5000
+    max_context_tokens: 131072
+    params:
+      reasoning_effort: low
+  premium:
+    name: "gpt-4.1"
+    provider: openai
+    input_cost_per_1m_tokens: 2.00
+    output_cost_per_1m_tokens: 8.00
+    max_latency_ms: 10000
+    max_context_tokens: 1000000
+
+router:
+  model: "gpt-4o-mini"
+  provider: openai
+  input_cost_per_1m_tokens: 0.15
+  output_cost_per_1m_tokens: 0.60
+  temperature: 0
+  max_tokens: 300
+
+answer:
+  temperature: 0.2
+  max_tokens: 900
+
+evaluator:
+  model: "gpt-4o-mini"
+  provider: openai
+  temperature: 0
+  max_tokens: 300
+
+# How many test queries a "quick" demo run uses. Stratified across complexity
+# bands, so 18 gives 7 SIMPLE / 6 MEDIUM / 5 HARD rather than the first 18 in
+# file order (which would be 14 SIMPLE, 4 MEDIUM and no HARD at all).
+experiment:
+  demo_query_count: 18

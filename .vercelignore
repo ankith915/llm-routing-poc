@@ -1,0 +1,12 @@
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+tests/
+.env
+requirements-dev.txt
+run_experiment.py
+Dockerfile
+docker-compose.yml
+backend/data/results.json
+requirements-compression.txt

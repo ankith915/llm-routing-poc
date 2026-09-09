@@ -1,0 +1,12 @@
+# Local-only extras for the context-compression A/B:
+#   pip install -r requirements-compression.txt
+#   python run_experiment.py --compression both
+#
+# headroom-ai pulls in litellm, botocore and friends (~300MB of site-packages),
+# which is over Vercel's 250MB function limit - so it is deliberately NOT in
+# requirements.txt. The app degrades to an uncompressed passthrough when it is
+# absent and refuses to queue a "headroom" run (see backend/compression.py and
+# POST /api/experiment/run). Set DATABASE_URL in .env to have a local A/B run
+# land in the deployed dashboard.
+-r requirements.txt
+headroom-ai==0.37.0

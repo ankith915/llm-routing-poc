@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Router Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#0d7a6f;--amber:#b07d2b;--plum:#7a3b6b;--red:#a04a3c;--ink:#16181c;--paper:#f4f2ee;--mut:#8a8f97;--line:rgba(0,0,0,.09)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.layout{display:grid;grid-template-columns:224px 1fr;min-height:100vh}
+aside{background:var(--ink);color:#e8e6e1;padding:22px 0 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.brand{padding:0 20px 20px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600}
+.dot{width:9px;height:9px;background:#37d3bd;border-radius:50%;box-shadow:0 0 0 3px rgba(55,211,189,.18)}
+.sub{font-size:10.5px;color:#7c8087;padding:0 20px 14px 38px}
+nav{display:flex;flex-direction:column;gap:1px;padding:0 10px}
+nav button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;cursor:pointer;padding:9px 11px;border-radius:6px;font-size:12.5px;background:transparent;color:#a9adb4;font-family:inherit}
+nav button:hover{background:rgba(255,255,255,.08)}
+nav button.on{background:rgba(255,255,255,.11);color:#fff;font-weight:600}
+nav button .n{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5f646b;width:14px}
+nav button.on .n{color:#37d3bd}
+.side-foot{margin-top:auto;padding:14px 20px 0;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#7c8087}
+main{padding:30px 36px 60px;min-width:0}
+h1{margin:0;font-size:25px;font-weight:600;letter-spacing:-.015em}
+.kicker{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+header.page{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;border-bottom:1px solid rgba(0,0,0,.1);padding-bottom:16px;margin-bottom:22px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px 22px}
+.cardtitle{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
+.hero{background:var(--ink);color:#fff;border-radius:10px;padding:24px 26px;display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.hero .big{font-size:46px;line-height:1;font-weight:600;letter-spacing:-.03em}
+.hero .big small{font-size:24px}
+.hero .lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:#8a8f97;margin-bottom:7px}
+.hero .note{font-size:12px;color:#a9adb4;margin-top:6px}
+.hero .quote{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.12);padding-top:14px;font-size:12.5px;line-height:1.5;color:#d6d4cf}
+.bar{height:14px;background:#f1efeb;border-radius:3px;overflow:hidden}
+.bar>div{height:100%;border-radius:3px}
+button.primary{border:0;background:var(--teal);color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:7px;cursor:pointer;font-family:inherit}
+button.primary:hover{background:#0a5f57}
+button.primary:disabled{background:#9aa5a3;cursor:default}
+button.ghost{border:1px solid rgba(0,0,0,.14);background:#fff;color:#3d4148;font-size:12px;padding:7px 13px;border-radius:6px;cursor:pointer;font-family:inherit}
+button.ghost.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);font-weight:500;text-align:left;padding:10px 10px;background:#faf9f7}
+td{padding:11px 10px;border-top:1px solid rgba(0,0,0,.06);vertical-align:top}
+td.r,th.r{text-align:right}
+.chip{display:inline-block;font-size:11px;padding:3px 8px;border-radius:4px}
+.dots span{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e2dfda;margin-left:2px}
+.swatch{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px}
+.empty{padding:40px;text-align:center;color:var(--mut);font-size:13px}
+textarea{width:100%;border:1px solid rgba(0,0,0,.14);border-radius:7px;padding:12px 14px;font-size:14px;background:#fdfcfb;font-family:inherit;resize:vertical;min-height:52px}
+pre.json{background:var(--ink);color:#c9e8e3;border-radius:8px;padding:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-x:auto;margin:0}
+.decision-chip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid rgba(0,0,0,.1);background:#faf9f7;border-radius:5px;padding:5px 9px;font-size:11px;margin:0 5px 6px 0}
+.decision-chip b{font-weight:600}
+.answer{font-size:13.5px;line-height:1.65;color:#25282d;white-space:pre-wrap}
+.progress{height:6px;background:#f1efeb;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;background:var(--teal);transition:width .5s}
+.statrow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.stat .l{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;margin-top:4px}
+.err{color:var(--red);font-size:12.5px}
+.note{font-size:12px;color:#5c6069;line-height:1.5}
+.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden}.bar>div{height:100%;border-radius:5px}
+select.cmode{font:inherit;font-size:12.5px;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);z-index:99;
+  background:#1c1f24;border:1px solid rgba(255,255,255,.14);border-radius:8px;
+  padding:11px 18px;font-size:13px;color:#d7dade;box-shadow:0 8px 28px rgba(0,0,0,.45);
+  opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;max-width:min(520px,88vw)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.hide{display:none}
+.chatwrap{max-width:820px;display:flex;flex-direction:column;gap:14px}
+.msg-user{align-self:flex-end;background:var(--ink);color:#fff;border-radius:12px 12px 3px 12px;padding:11px 15px;font-size:13.5px;max-width:75%}
+.msg-ai{align-self:flex-start;max-width:92%;width:100%}
+.thinking{border:1px solid rgba(0,0,0,.09);border-left:3px solid var(--teal);background:#fbfaf8;border-radius:8px;padding:12px 15px;margin-bottom:8px}
+.thinking .t-head{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.thinking .t-body{font-size:12.5px;line-height:1.6;color:#4a4e55;margin-top:9px}
+.thinking .t-reason{font-style:italic;color:#5c6069}
+.ai-bubble{background:#fff;border:1px solid var(--line);border-radius:3px 12px 12px 12px;overflow:hidden}
+.ai-meta{display:flex;gap:14px;flex-wrap:wrap;padding:9px 16px;border-top:1px solid rgba(0,0,0,.06);background:#faf9f7;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut)}
+.pulse{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+@media(max-width:980px){.layout{grid-template-columns:1fr}aside{position:static;height:auto}.grid2,.grid3,.statrow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside>
+  <div class="brand"><span class="dot"></span>Router Console</div>
+  <div class="sub mono">llm-routing-poc</div>
+  <nav id="nav"></nav>
+  <div class="side-foot mono" id="cfginfo">loading config…</div>
+</aside>
+<main id="main"><div class="empty">Loading…</div></main>
+</div>
+<script>
+const TIER_COLORS = {cheap:'#0d7a6f', medium:'#b07d2b', premium:'#7a3b6b'};
+const STRAT_COLORS = {none:'#7a3b6b', rule:'#b07d2b', intelligent:'#0d7a6f'};
+const STRAT_CHIP = {none:['#f0eaf0','#7a3b6b'], rule:['#f6efe1','#8a6820'], intelligent:['#e6f3f1','#0d7a6f']};
+const CX_COLORS = {SIMPLE:'#0d7a6f', MEDIUM:'#b07d2b', HARD:'#7a3b6b'};
+const VIEWS = [['overview','Experiment results'],['console','Query console'],['chat','Chat demo'],['requests','Request log'],['data','Telemetry data']];
+let state = {view:'overview', strategy:'intelligent', dataTab:'logs', config:null, pollTimer:null, chat:[]};
+
+const $ = (s)=>document.querySelector(s);
+const esc = (s)=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money = (v)=>v==null?'—':'$'+Number(v).toFixed(v<0.01?5:4);
+const api = async (path, opts)=>{const r=await fetch(path,opts); if(!r.ok){let d;try{d=await r.json()}catch{d={}}; throw new Error(d.detail||r.statusText)} return r.json()};
+
+function nav(){
+  $('#nav').innerHTML = VIEWS.map(([id,label],i)=>
+    `<button class="${state.view===id?'on':''}" onclick="go('${id}')"><span class="n">0${i+1}</span>${label}</button>`).join('');
+}
+function go(v){state.view=v; render();}
+let toastTimer=null;
+function notify(msg){
+  let el=$('#toast');
+  if(!el){el=document.createElement('div'); el.id='toast'; document.body.appendChild(el)}
+  el.textContent = msg || 'Something went wrong. Please try again.';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'), 4200);
+}
+function dots(score,color){let h='';for(let i=1;i<=5;i++)h+=`<span style="${score!=null&&i<=score?`background:${color}`:''}"></span>`;return `<span class="dots">${h}</span>`}
+
+async function loadConfig(){
+  try{state.config = await api('/api/config');
+    const c=state.config;
+    const anyRef = Object.values(c.tiers).some(t=>t.pricing_note);
+    $('#cfginfo').innerHTML = Object.entries(c.tiers).map(([k,t])=>
+      `<div style="margin-bottom:5px"><span style="color:${TIER_COLORS[k]}">${k}</span> ${esc(t.name.split('/')[1]||t.name)}${t.pricing_note?'<span title="'+esc(t.pricing_note)+'" style="color:#e0a86e">*</span>':''}</div>`).join('')
+      + (anyRef?'<div style="color:#7c8087;margin-top:8px">* free endpoint, costed at paid-variant price</div>':'')
+      + (c.api_key_configured?'':'<div style="color:#e0a86e;margin-top:8px">⚠ no API keys configured</div>');
+  }catch(e){$('#cfginfo').textContent='config unavailable'}
+}
+
+// ---------- Overview ----------
+async function renderOverview(){
+  // /step advances the batch and returns progress: the work has to run inside a
+  // request, because the server is frozen once it has responded.
+  const status = await api('/api/experiment/step',{method:'POST'});
+  const m = await api('/api/metrics');
+  const cz = await api('/api/compression').catch(()=>null);
+  const strategies = m.comparison.strategies;
+  const byS = Object.fromEntries(strategies.map(s=>[s.strategy,s]));
+  const intel = byS.intelligent, base = byS.none;
+  const running = status.status==='running';
+  const hasData = m.total_requests>0;
+
+  // Provider hiccups are retried and failed over inside the pipeline, so they
+  // are not shown here. Only a run that mostly collapsed is worth surfacing,
+  // and then as one calm line - never a raw provider error.
+  let progress='';
+  if(running){
+    const pct = status.total? Math.round(100*status.completed/status.total):0;
+    progress = `<div class="card" style="margin-bottom:16px"><div class="cardtitle">Experiment running</div>
+      <div class="mono" style="font-size:12px">${status.completed} / ${status.total} requests${etaText(status)}</div>
+      <div class="progress"><div style="width:${pct}%"></div></div></div>`;
+    schedulePoll();
+  } else if(status.status==='done' && status.total && status.failed > status.total/2){
+    progress = `<div class="card" style="margin-bottom:16px"><div class="cardtitle">Incomplete run</div>
+      <div class="note">Most requests could not be completed — check the API keys and the server log, then re-run.</div></div>`;
+  }
+
+  let hero='';
+  if(hasData && intel.requests>0 && base.requests>0){
+    hero = `<section class="grid2" style="margin-bottom:16px">
+      <div class="hero">
+        <div><div class="lbl">Cost saving · intelligent</div><div class="big" style="color:#37d3bd">${intel.cost_savings_pct??'—'}<small>%</small></div>
+          <div class="note">${money(base.total_cost_usd)} → ${money(intel.total_cost_usd)} across ${intel.requests} requests</div></div>
+        <div style="border-left:1px solid rgba(255,255,255,.12);padding-left:22px"><div class="lbl">Quality retained</div>
+          <div class="big">${intel.quality_retention_pct??'—'}<small>%</small></div>
+          <div class="note">${intel.avg_quality??'n/a'} vs ${base.avg_quality??'n/a'} mean score</div></div>
+        <div class="quote">The objective isn't to always use the cheapest model. It's to use the cheapest model that can satisfy the requirements of the request.</div>
+      </div>
+      <div class="card"><div class="cardtitle">Cost per strategy</div>${costBars(strategies)}</div>
+    </section>`;
+  }
+
+  const util = intel && Object.keys(intel.model_utilization||{}).length ? `
+    <div class="card"><div class="cardtitle">Model utilization · intelligent</div>${utilization(intel.model_utilization)}</div>`:'';
+  const qbc = Object.keys(m.quality.by_complexity||{}).length ? `
+    <div class="card"><div class="cardtitle">Quality by complexity</div>${qualityByComplexity(m.quality.by_complexity)}</div>`:'';
+  const scatter = hasData? `<div class="card"><div class="cardtitle">Quality vs cost per request</div>${scatterSVG(strategies)}</div>`:'';
+
+  $('#main').innerHTML = `
+    <header class="page">
+      <div><div class="kicker">Experiment results</div><h1>${hasData? m.total_requests+' requests, three routing strategies'+(m.all_requests>m.total_requests?` <span style="color:var(--mut);font-weight:400;font-size:.55em">+ ${m.all_requests-m.total_requests} with compression</span>`:''):'Cost-aware LLM routing'}</h1></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="cmode" id="cmode" ${running?'disabled':''} title="${state.config?.compression_available?'Run every query with and without Headroom context compression':'Headroom is not installed on this host - run the A/B locally'}">
+          <option value="off">Routing only</option>
+          <option value="both" ${state.config?.compression_available?'':'disabled'}>Routing + Headroom A/B</option>
+        </select>
+        <button id="fullbtn" ${running?'disabled':''} onclick="runExperiment(true)" title="All ${state.config?.total_query_count??36} test queries">Full run</button>
+        <button class="primary" id="runbtn" ${running?'disabled':''} onclick="runExperiment(false)">${running?'Running…':(hasData?'Re-run experiment':`Run experiment (${state.config?.demo_query_count??18} queries)`)}</button>
+      </div>
+    </header>
+    ${progress}${hero}
+    ${hasData? `<section class="grid3" style="margin-top:0">${util}${qbc}${scatter}</section>
+    <section class="card" style="margin-top:16px;padding:0;overflow:hidden">
+      <div style="padding:16px 22px 12px" class="cardtitle">Strategy comparison · identical query set</div>
+      ${comparisonTable(strategies)}</section>`
+    : `<div class="card"><div class="empty">No results yet. Run the batch experiment to send each test query through all three strategies (no routing → premium, rule-based, intelligent) and grade every answer.<br><br>
+       <span class="mono" style="font-size:11px">${3*(state.config?.demo_query_count??18)} answer calls + routing + grading · about a minute</span></div></div>`}
+    ${compressionPanel(cz, m)}`;
+}
+function etaText(status){
+  if(!status.started_at || !status.completed) return '';
+  const elapsed = (Date.now()/1000) - status.started_at;
+  const remaining = Math.round(elapsed/status.completed * (status.total-status.completed));
+  if(!isFinite(remaining) || remaining<=0) return '';
+  const m = Math.floor(remaining/60), sec = remaining%60;
+  return ` · about ${m?m+'m ':''}${sec}s remaining`;
+}
+function fmtInt(n){return n==null?'—':Number(n).toLocaleString()}
+function compressionPanel(cz, m){
+  if(!cz) return '';
+  const ref = cz.naive_json_reference||{};
+  const hr = (cz.delta||{}).headroom;
+  const strategies = m.comparison.strategies;
+  const w = ref.naive_json_tokens? Math.round(100*ref.pipeline_tokens/ref.naive_json_tokens):100;
+  let html = `<section class="card" style="margin-top:16px">
+    <div class="cardtitle">Context tokens · what the pipeline already saves</div>
+    <div style="display:grid;grid-template-columns:170px 1fr 80px;gap:10px 14px;align-items:center;font-size:12.5px">
+      <div>Naive JSON dump</div><div class="bar"><div style="width:100%;background:#c9c5bd"></div></div><div class="mono r">${fmtInt(ref.naive_json_tokens)}</div>
+      <div>Pipeline format <span style="color:var(--mut)">· sent today</span></div><div class="bar"><div style="width:${w}%;background:var(--teal)"></div></div><div class="mono r">${fmtInt(ref.pipeline_tokens)}</div>
+    </div>
+    <div class="note" style="margin-top:10px"><b>${ref.saved_pct??0}% fewer context tokens</b> than dumping the raw dataset as JSON, across the ${ref.queries} demo queries. Counted with the model's own tokenizer — a measurement, not a run.</div>`;
+  if(hr){
+    html += `<div class="cardtitle" style="margin-top:22px">Headroom compression · on vs off, identical queries</div>
+    <div style="overflow-x:auto"><table><thead><tr><th>Strategy</th><th class="r">Context tokens</th><th class="r">Cost / request</th><th class="r">Quality</th></tr></thead><tbody>
+    ${strategies.map(s=>{const d=hr[s.strategy]; if(!d) return '';
+      const cc = d.cost_pct==null?'var(--mut)':(d.cost_pct<0?'var(--teal)':'var(--amber)');
+      const qc = d.quality_delta==null?'var(--mut)':(d.quality_delta<0?'var(--amber)':'var(--teal)');
+      return `<tr><td><span class="swatch" style="background:${STRAT_COLORS[s.strategy]}"></span>${esc(s.label)}</td>
+        <td class="r mono" style="color:var(--teal)">−${d.tokens_saved_pct}%</td>
+        <td class="r mono" style="color:${cc};font-weight:600">${d.cost_pct==null?'n/a':(d.cost_pct>0?'+':'')+d.cost_pct+'%'}</td>
+        <td class="r mono" style="color:${qc};font-weight:600">${d.quality_delta==null?'n/a':(d.quality_delta>0?'+':'')+d.quality_delta.toFixed(2)}</td></tr>`}).join('')}
+    </tbody></table></div>
+    <div class="note" style="margin-top:10px">Per-request deltas, Headroom on vs off, on the same queries. A negative quality delta means compression cost accuracy — shown as measured, not hidden.</div>`;
+  } else {
+    html += `<div class="note" style="margin-top:14px">Headroom on/off A/B not run yet${cz.available?'':' — it runs locally'}: <span class="mono">python run_experiment.py --compression both</span></div>`;
+  }
+  return html + `</section>`;
+}
+function costBars(strategies){
+  const max = Math.max(...strategies.map(s=>s.total_cost_usd||0), 1e-9);
+  return strategies.map(s=>`
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(s.label)}</span><b class="mono">${money(s.total_cost_usd)}</b></div>
+      <div class="bar" style="margin-top:5px"><div style="width:${Math.max(2,100*s.total_cost_usd/max)}%;background:${STRAT_COLORS[s.strategy]}"></div></div>
+      <div class="mono" style="font-size:10.5px;color:var(--mut);margin-top:4px">quality ${s.avg_quality??'n/a'} · p50 ${(s.p50_latency_ms/1000).toFixed(1)}s · p95 ${(s.p95_latency_ms/1000).toFixed(1)}s</div>
+    </div>`).join('');
+}
+function utilization(util){
+  const entries = Object.entries(util);
+  const strip = entries.map(([t,u])=>`<div style="width:${u.pct}%;background:${TIER_COLORS[t]}"></div>`).join('');
+  return `<div style="display:flex;height:24px;border-radius:5px;overflow:hidden;margin-bottom:12px">${strip}</div>`+
+    entries.map(([t,u])=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:7px">
+      <span class="swatch" style="background:${TIER_COLORS[t]}"></span><span style="flex:1">${t} tier</span>
+      <b class="mono" style="font-size:12px">${u.pct}%</b><span class="mono" style="color:var(--mut);font-size:11px">${u.count} req</span></div>`).join('');
+}
+function qualityByComplexity(bc){
+  const order=['SIMPLE','MEDIUM','HARD'];
+  return order.filter(c=>bc[c]).map(c=>{
+    const per=bc[c]; const base=per.none, intel=per.intelligent;
+    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px">
+      <span>${c.toLowerCase()}</span><span class="mono" style="color:#5c6069">${base??'—'} → <b style="color:var(--ink)">${intel??'—'}</b></span></div>
+      <div style="height:8px;background:#f1efeb;border-radius:2px;position:relative;margin-top:5px">
+        ${intel!=null?`<div style="position:absolute;inset:0 auto 0 0;width:${20*intel}%;background:var(--teal);border-radius:2px"></div>`:''}
+        ${base!=null?`<div style="position:absolute;top:-3px;bottom:-3px;left:${20*base}%;width:2px;background:var(--ink)"></div>`:''}
+      </div></div>`;
+  }).join('')+`<div style="font-size:11px;color:var(--mut)">Bar = intelligent · tick = premium baseline · scale 0–5</div>`;
+}
+function comparisonTable(strategies){
+  return `<div style="overflow-x:auto"><table>
+    <thead><tr><th style="padding-left:22px">Strategy</th><th class="r">Total cost</th><th class="r">Cost / req</th><th class="r">Quality</th><th class="r">Mean latency</th><th class="r">P50</th><th class="r">P95</th><th class="r" style="padding-right:22px">Saving</th></tr></thead>
+    <tbody>${strategies.map(s=>`<tr>
+      <td style="padding-left:22px"><span class="swatch" style="background:${STRAT_COLORS[s.strategy]}"></span>${esc(s.label)}</td>
+      <td class="r mono"><b>${money(s.total_cost_usd)}</b></td>
+      <td class="r mono" style="color:#5c6069">${money(s.avg_cost_usd)}</td>
+      <td class="r mono">${s.avg_quality??'n/a'}</td>
+      <td class="r mono" style="color:#5c6069">${(s.avg_latency_ms/1000).toFixed(1)}s</td>
+      <td class="r mono" style="color:#5c6069">${(s.p50_latency_ms/1000).toFixed(1)}s</td>
+      <td class="r mono" style="color:#5c6069">${(s.p95_latency_ms/1000).toFixed(1)}s</td>
+      <td class="r mono" style="padding-right:22px;font-weight:600;color:${s.strategy==='none'?'var(--mut)':'var(--teal)'}">${s.strategy==='none'?'—':(s.cost_savings_pct??'—')+'%'}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+function scatterSVG(strategies){
+  const pts = strategies.filter(s=>s.requests>0 && s.avg_quality!=null);
+  if(!pts.length) return '<div class="empty">no evaluated requests</div>';
+  const W=560,H=260,PL=46,PB=34,PT=26,PR=20;
+  const xMax=Math.max(...pts.map(p=>p.avg_cost_usd))*1.25;
+  const sx=v=>PL+(v/xMax)*(W-PL-PR), sy=v=>PT+(1-(v-3.5)/1.5)*(H-PT-PB);
+  let g='';
+  [3.5,4,4.5,5].forEach(v=>{g+=`<line x1="${PL}" x2="${W-PR}" y1="${sy(v)}" y2="${sy(v)}" stroke="#eae7e2"/>`+
+    `<text x="${PL-8}" y="${sy(v)+4}" text-anchor="end" font-size="9" fill="#a8adb4" font-family="IBM Plex Mono,monospace">${v.toFixed(1)}</text>`});
+  pts.forEach(p=>{const c=STRAT_COLORS[p.strategy];
+    g+=`<circle cx="${sx(p.avg_cost_usd)}" cy="${sy(p.avg_quality)}" r="${8+p.requests/6}" fill="${c}" fill-opacity=".16"/>`+
+       `<circle cx="${sx(p.avg_cost_usd)}" cy="${sy(p.avg_quality)}" r="5" fill="${c}"/>`+
+       `<text x="${sx(p.avg_cost_usd)}" y="${sy(p.avg_quality)-16}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#16181c" font-family="IBM Plex Sans,sans-serif">${esc(p.label.split(' ')[0])}</text>`});
+  g+=`<text x="${(W+PL)/2}" y="${H-4}" text-anchor="middle" font-size="9" fill="#8a8f97" font-family="IBM Plex Mono,monospace" letter-spacing=".06em">AVG COST PER REQUEST (USD)</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>`;
+}
+async function runExperiment(full=false){
+  const btn=$('#runbtn'), fullBtn=$('#fullbtn');
+  btn.disabled=true; if(fullBtn) fullBtn.disabled=true; btn.textContent='Starting…';
+  try{
+    await api('/api/experiment/run',{method:'POST',headers:{'Content-Type':'application/json'},
+                                     body:JSON.stringify({full, compression: $('#cmode')?.value || 'off'})});
+    schedulePoll(800);
+  }catch(e){
+    btn.disabled=false; if(fullBtn) fullBtn.disabled=false;
+    btn.textContent='Run experiment';
+    notify(e.message);
+  }
+}
+function schedulePoll(ms=250){
+  clearTimeout(state.pollTimer);
+  state.pollTimer=setTimeout(()=>{if(state.view==='overview')renderOverview()},ms);
+}
+
+// ---------- Console ----------
+let lastResult=null, samples=[];
+async function renderConsole(){
+  if(!samples.length){try{samples=await api('/api/testqueries')}catch(e){}}
+  const pick=(cx)=>{const c=samples.filter(q=>q.complexity===cx);return c[Math.floor(Math.random()*c.length)]};
+  $('#main').innerHTML=`
+    <header class="page"><div><div class="kicker">Query console</div><h1>POST /api/query</h1></div></header>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;gap:10px;align-items:stretch">
+        <textarea id="q" placeholder="Ask an IT-ops question…">Why is payment-api experiencing high latency?</textarea>
+        <button class="primary" id="routebtn" onclick="submitQuery()">Route</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">
+        <span class="mono" style="font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em">Strategy</span>
+        ${['none','rule','intelligent'].map(s=>`<button class="ghost ${state.strategy===s?'on':''}" onclick="state.strategy='${s}';renderConsole()">${{none:'No routing',rule:'Rule-based',intelligent:'Intelligent'}[s]}</button>`).join('')}
+        <span style="flex:1"></span>
+        ${['SIMPLE','MEDIUM','HARD'].map(cx=>`<button class="ghost" style="border-style:dashed" onclick='sampleQuery(${JSON.stringify(cx)})'>${cx.toLowerCase()}</button>`).join('')}
+      </div>
+    </div>
+    <div id="result">${lastResult?renderResult(lastResult):'<div class="card"><div class="empty">Submit a query to see the routing decision, answer, tokens, cost and latency.</div></div>'}</div>`;
+}
+function sampleQuery(cx){const c=samples.filter(q=>q.complexity===cx);if(c.length){$('#q').value=c[Math.floor(Math.random()*c.length)].query}}
+async function submitQuery(){
+  const q=$('#q').value.trim(); if(!q)return;
+  const btn=$('#routebtn'); btn.disabled=true; btn.textContent='…';
+  $('#result').innerHTML='<div class="card"><div class="empty">Routing and answering…</div></div>';
+  try{
+    lastResult=await api('/api/query',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:q,strategy:state.strategy,evaluate:true})});
+    $('#result').innerHTML=renderResult(lastResult);
+  }catch(e){$('#result').innerHTML=`<div class="card"><div class="err">✕ ${esc(e.message)}</div></div>`}
+  btn.disabled=false; btn.textContent='Route';
+}
+function renderResult(r){
+  const rt=r.routing||{};
+  const chips=[['complexity',rt.complexity],['reasoning',rt.reasoning_required],['context',rt.context_requirement],
+    ['quality',rt.quality_requirement],['latency',rt.latency_requirement],['tier',rt.selected_tier]]
+    .filter(([,v])=>v!==undefined&&v!==null)
+    .map(([k,v])=>`<span class="decision-chip"><span class="mono" style="color:var(--mut);font-size:10px">${k}</span><b style="color:${k==='tier'?TIER_COLORS[String(v).toLowerCase()]||'var(--ink)':'var(--ink)'}">${esc(v)}</b></span>`).join('');
+  return `<div class="grid2">
+    <div class="card">
+      <div class="cardtitle">Routing decision</div>
+      <div>${chips}</div>
+      ${rt.reason?`<p style="margin:10px 0 0;font-size:13px;line-height:1.55;color:#3d4148;border-left:2px solid var(--teal);padding-left:11px">${esc(rt.reason)}</p>`:''}
+      ${rt.selection_note?`<div class="mono" style="font-size:10.5px;color:var(--mut);margin-top:8px">${esc(rt.selection_note)}</div>`:''}
+      <details style="margin-top:14px"><summary class="mono" style="cursor:pointer;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em">Full response JSON</summary>
+      <pre class="json" style="margin-top:10px">${esc(JSON.stringify(r,null,2))}</pre></details>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 22px;border-bottom:1px solid rgba(0,0,0,.07);display:flex;justify-content:space-between;align-items:center">
+        <span class="cardtitle" style="margin:0">Answer</span>
+        <span class="mono chip" style="background:#eef6f4;color:var(--teal)">${esc(r.model)}</span>
+      </div>
+      <div class="answer" style="padding:18px 22px">${esc(r.answer)}</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid rgba(0,0,0,.07);background:#faf9f7">
+        ${[['in / out',`${r.usage.input_tokens} / ${r.usage.output_tokens}`],['cost',money(r.metrics.cost_usd)],
+          ['latency',(r.metrics.latency_ms/1000).toFixed(1)+'s'],['tier',rt.selected_tier||'—'],
+          ['quality',r.quality_score?r.quality_score+' / 5':'—']].map(([l,v])=>
+          `<div style="padding:12px 14px;border-left:1px solid rgba(0,0,0,.05)"><div class="mono" style="font-size:9.5px;color:var(--mut);text-transform:uppercase">${l}</div>
+           <div class="mono" style="font-size:13px;font-weight:600;margin-top:2px">${esc(v)}</div></div>`).join('')}
+      </div>
+      ${r.quality_rationale?`<div style="padding:10px 22px;border-top:1px solid rgba(0,0,0,.07);font-size:11.5px;color:var(--mut)">judge: ${esc(r.quality_rationale)}</div>`:''}
+    </div></div>`;
+}
+
+// ---------- Chat demo ----------
+async function renderChat(){
+  if(!samples.length){try{samples=await api('/api/testqueries')}catch(e){}}
+  $('#main').innerHTML=`
+    <header class="page"><div><div class="kicker">Live demo</div><h1>Ops chat</h1></div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <span class="mono" style="font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em">Strategy</span>
+        ${['none','rule','intelligent'].map(x=>`<button class="ghost ${state.strategy===x?'on':''}" onclick="state.strategy='${x}';renderChat()">${{none:'No routing',rule:'Rule-based',intelligent:'Intelligent'}[x]}</button>`).join('')}
+        ${state.chat.length?`<button class="ghost" onclick="state.chat=[];renderChat()">Clear</button>`:''}
+      </div></header>
+    <div class="chatwrap" id="chatlog">
+      ${state.chat.length?state.chat.map(chatMsg).join(''):`<div class="card"><div class="empty">Ask an IT-ops question. The router's decision is shown as visible "thinking" before every answer — switch strategies to show how the same question lands on different models.</div></div>`}
+    </div>
+    <div class="chatwrap" style="margin-top:16px">
+      <div class="card" style="padding:12px 14px">
+        <div style="display:flex;gap:10px">
+          <textarea id="chatq" style="min-height:44px" placeholder="e.g. Why is payment-api experiencing high latency?"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+          <button class="primary" id="chatbtn" onclick="sendChat()">Send</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">
+          ${['SIMPLE','MEDIUM','HARD'].map(cx=>`<button class="ghost" style="border-style:dashed;font-size:11px" onclick='chatSample(${JSON.stringify(cx)})'>try ${cx.toLowerCase()}</button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  const log=$('#chatlog'); if(log) log.lastElementChild?.scrollIntoView({block:'end'});
+}
+function chatSample(cx){const c=samples.filter(q=>q.complexity===cx);if(c.length)$('#chatq').value=c[Math.floor(Math.random()*c.length)].query;$('#chatq').focus()}
+function chatMsg(m){
+  if(m.role==='user') return `<div class="msg-user">${esc(m.text)}</div>`;
+  if(m.pending) return `<div class="msg-ai"><div class="thinking pulse"><div class="t-head">Router thinking</div>
+    <div class="t-body t-reason">Analyzing complexity, reasoning need, context size, quality and latency requirements…</div></div></div>`;
+  if(m.error) return `<div class="msg-ai"><div class="ai-bubble"><div class="note" style="padding:14px 16px">That query could not be answered just now — please try again.</div></div></div>`;
+  const r=m.result, rt=r.routing||{};
+  const fields=[['complexity',rt.complexity],['reasoning',rt.reasoning_required],['quality need',rt.quality_requirement],
+    ['latency need',rt.latency_requirement],['tier',rt.selected_tier]].filter(([,v])=>v!=null);
+  return `<div class="msg-ai">
+    <div class="thinking">
+      <div class="t-head" onclick="this.parentElement.querySelector('.t-body').classList.toggle('hide')">
+        <span>Router thinking · ${esc(m.strategy)}</span>
+        <span style="color:${TIER_COLORS[rt.selected_tier]||'var(--mut)'};font-weight:600">→ ${esc(rt.selected_tier)} · ${esc((r.model||'').split('/').pop())}</span>
+      </div>
+      <div class="t-body">
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${fields.map(([k,v])=>
+          `<span class="decision-chip" style="margin:0"><span class="mono" style="color:var(--mut);font-size:10px">${k}</span><b>${esc(v)}</b></span>`).join('')}</div>
+        ${rt.reason?`<div class="t-reason">“${esc(rt.reason)}”</div>`:''}
+        ${rt.selection_note?`<div class="mono" style="font-size:10.5px;color:var(--mut);margin-top:6px">${esc(rt.selection_note)}${rt.router_latency_ms?` · router overhead ${rt.router_latency_ms}ms / ${money(rt.router_cost_usd)}`:''}</div>`:''}
+      </div>
+    </div>
+    <div class="ai-bubble">
+      <div class="answer" style="padding:15px 18px">${esc(r.answer)}</div>
+      <div class="ai-meta"><span style="color:${TIER_COLORS[rt.selected_tier]||'inherit'}">${esc(r.model)}</span>
+        <span>${r.usage.input_tokens} / ${r.usage.output_tokens} tok</span><span>${money(r.metrics.cost_usd)}</span>
+        <span>${(r.metrics.latency_ms/1000).toFixed(1)}s</span>${r.quality_score?`<span>judge ${r.quality_score}/5</span>`:''}</div>
+    </div></div>`;
+}
+async function sendChat(){
+  const el=$('#chatq'); const q=el.value.trim(); if(!q)return;
+  state.chat.push({role:'user',text:q});
+  const pending={role:'ai',pending:true}; state.chat.push(pending);
+  renderChat();
+  try{
+    const r=await api('/api/query',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:q,strategy:state.strategy,evaluate:true})});
+    Object.assign(pending,{pending:false,result:r,strategy:state.strategy});
+  }catch(e){
+    console.error('query failed:', e);        // detail stays in the dev console
+    Object.assign(pending,{pending:false,error:true});
+    notify('That query could not be answered just now — please try again.');
+  }
+  renderChat();
+}
+
+// ---------- Requests ----------
+async function renderRequests(){
+  const filter = state.reqFilter||'';
+  const data = await api('/api/requests'+(filter?`?strategy=${filter}`:''));
+  const rs = data.requests;
+  const stats = rs.length? [['Requests',rs.length],['Total cost',money(rs.reduce((a,r)=>a+r.cost_usd,0))],
+    ['Mean tokens',Math.round(rs.reduce((a,r)=>a+r.input_tokens+r.output_tokens,0)/rs.length).toLocaleString()],
+    ['Mean latency',(rs.reduce((a,r)=>a+r.latency_ms,0)/rs.length/1000).toFixed(1)+'s'],
+    ['Mean quality',(()=>{const q=rs.filter(r=>r.quality_score!=null);return q.length?(q.reduce((a,r)=>a+r.quality_score,0)/q.length).toFixed(2):'—'})()]]:[];
+  $('#main').innerHTML=`
+    <header class="page"><div><div class="kicker">GET /api/requests</div><h1>Request log</h1></div>
+      <div style="display:flex;gap:7px">${[['','All'],['none','No routing'],['rule','Rule'],['intelligent','Intelligent']].map(([v,l])=>
+        `<button class="ghost ${filter===v?'on':''}" onclick="state.reqFilter='${v}';renderRequests()">${l}</button>`).join('')}</div></header>
+    ${stats.length?`<div class="statrow">${stats.map(([l,v])=>`<div class="stat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('')}</div>`:''}
+    <div class="card" style="padding:0;overflow:hidden">${rs.length?`<div style="overflow-x:auto"><table>
+      <thead><tr><th style="padding-left:20px">ID</th><th>Query</th><th>Strategy</th><th>Model</th><th>Complexity</th><th class="r">Tokens</th><th class="r">Cost</th><th class="r">Latency</th><th class="r" style="padding-right:20px">Quality</th></tr></thead>
+      <tbody>${rs.map(r=>{const cx=r.expected_complexity||(r.routing||{}).complexity;const cc=STRAT_CHIP[r.strategy]||['#eee','#333'];
+        return `<tr><td class="mono" style="padding-left:20px;font-size:11px;color:var(--mut)">${esc(r.request_id)}</td>
+        <td style="max-width:330px">${esc(r.query)}</td>
+        <td><span class="chip" style="background:${cc[0]};color:${cc[1]}">${esc(r.strategy)}</span></td>
+        <td class="mono" style="font-size:11px;color:#5c6069">${esc((r.model||'').split('/')[1]||r.model)}</td>
+        <td class="mono" style="font-size:10px;color:${CX_COLORS[cx]||'var(--mut)'}">${esc(cx||'—')}</td>
+        <td class="r mono" style="font-size:11.5px;color:#5c6069">${r.input_tokens.toLocaleString()} / ${r.output_tokens}</td>
+        <td class="r mono" style="font-size:11.5px">${money(r.cost_usd)}</td>
+        <td class="r mono" style="font-size:11.5px;color:#5c6069">${(r.latency_ms/1000).toFixed(1)}s</td>
+        <td class="r" style="padding-right:20px">${dots(r.quality_score, r.quality_score>=4?'#0d7a6f':r.quality_score===3?'#b07d2b':'#a04a3c')}</td></tr>`}).join('')}</tbody></table></div>`
+      :'<div class="empty">No requests yet — run the experiment or use the query console.</div>'}</div>`;
+}
+
+// ---------- Data ----------
+async function renderData(){
+  const tab=state.dataTab;
+  const data=await api('/api/data/'+tab);
+  const cols={logs:['timestamp','service','host','level','message','latency_ms'],
+    metrics:['timestamp','service','cpu_percent','memory_percent','latency_ms','db_connections'],
+    incidents:['incident_id','service','severity','status','created_at','description']}[tab];
+  $('#main').innerHTML=`
+    <header class="page"><div><div class="kicker">backend/data</div><h1>Simulated telemetry</h1></div>
+      <div style="display:flex;gap:7px">${['logs','metrics','incidents'].map(t=>
+        `<button class="ghost mono ${tab===t?'on':''}" onclick="state.dataTab='${t}';renderData()">${t}.json</button>`).join('')}</div></header>
+    <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table>
+      <thead><tr>${cols.map((c,i)=>`<th style="${i===0?'padding-left:20px':''}">${c}</th>`).join('')}</tr></thead>
+      <tbody>${data.map(row=>`<tr>${cols.map((c,i)=>{
+        let v=row[c]; let style=i===0?'padding-left:20px;':'';
+        if(c==='level'||c==='severity'){const col={ERROR:'#a04a3c',HIGH:'#a04a3c',WARN:'#b07d2b',MEDIUM:'#b07d2b',INFO:'#5c6069',LOW:'#5c6069'}[v]||'#5c6069';style+=`color:${col};font-weight:600;`}
+        return `<td class="mono" style="font-size:11.5px;${style}">${esc(v??'—')}</td>`}).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+}
+
+async function render(){
+  nav();
+  clearTimeout(state.pollTimer);
+  try{
+    if(state.view==='overview')await renderOverview();
+    else if(state.view==='console')await renderConsole();
+    else if(state.view==='chat')await renderChat();
+    else if(state.view==='requests')await renderRequests();
+    else if(state.view==='data')await renderData();
+  }catch(e){$('#main').innerHTML=`<div class="card"><div class="err">✕ ${esc(e.message)}</div></div>`}
+}
+loadConfig(); render();
+</script>
+</body>
+</html>
