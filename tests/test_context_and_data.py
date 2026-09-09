@@ -18,7 +18,7 @@ def test_error_count_matches_expected_answer():
 
 def test_test_query_set_size_and_shape():
     qs = telemetry.load_test_queries()
-    assert 30 <= len(qs) <= 50
+    assert 30 <= len(qs) <= 80
     for q in qs:
         assert q["complexity"] in ("SIMPLE", "MEDIUM", "HARD")
         assert q["expected_answer"] and q["criteria"] and q["id"]

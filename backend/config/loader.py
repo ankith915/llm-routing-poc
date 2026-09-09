@@ -1,10 +1,9 @@
-"""Load model tier configuration from models.yaml plus environment settings.
+"""Settings: the model registry (config/models.yaml) plus environment.
 
-Model names, providers and prices live in config/models.yaml so they can be
-swapped without touching application code. Two providers are supported:
-  groq       - Groq's OpenAI-compatible API (cheap/medium tiers)
-  openai     - the OpenAI API directly (premium tier, router, judge)
-  openrouter - still supported, but no longer used by the shipped config
+`Settings.tiers` keeps the cheap/medium/premium view the routing strategies
+and the experiment use (one default model per tier). The full registry, with
+every candidate model and its capabilities, lives in
+backend.optimizer.registry and is built from the same file.
 """
 import os
 from dataclasses import dataclass, field
@@ -32,12 +31,12 @@ class ModelTier:
     output_cost_per_1m: float
     max_latency_ms: int
     max_context_tokens: int
-    pricing_note: str = ""        # e.g. free endpoint costed at paid-variant price
+    pricing_note: str = ""
     params: tuple = ()            # extra request fields, as sorted (key, value) pairs
+    cached_input_cost_per_1m: float | None = None
 
     @property
     def request_params(self) -> dict:
-        """Provider request fields to merge into the chat payload."""
         return dict(self.params)
 
     @property
@@ -62,14 +61,16 @@ class AuxModel:
 
 @dataclass(frozen=True)
 class Settings:
-    tiers: dict                   # key -> ModelTier
+    tiers: dict                   # key -> ModelTier (the tier-default models)
     router: AuxModel
     evaluator: AuxModel
     answer_params: dict
     api_keys: dict                # provider -> key ('' if unset)
     base_urls: dict               # provider -> base url
     experiment_concurrency: int
-    demo_query_count: int         # queries used by a "quick" demo run
+    demo_query_count: int
+    raw: dict = field(default_factory=dict, compare=False, repr=False)
+    price_registry_version: str = "unversioned"
 
     def tier(self, key: str) -> ModelTier:
         return self.tiers[key]
@@ -78,52 +79,79 @@ class Settings:
         return sorted(self.tiers.values(), key=lambda t: t.blended_cost)
 
 
-def _aux(raw: dict, env_model_var: str) -> AuxModel:
+def _price_of(raw: dict, model_id: str) -> tuple:
+    for m in raw.get("models", []):
+        if m["id"] == model_id:
+            return float(m["input_cost_per_1m"]), float(m["output_cost_per_1m"])
+    return 0.0, 0.0
+
+
+def _aux(raw: dict, section: dict, env_model_var: str) -> AuxModel:
+    name = os.getenv(env_model_var, section.get("model", "gpt-4o-mini"))
+    inp, out = _price_of(raw, name)
     return AuxModel(
-        name=os.getenv(env_model_var, raw.get("model", "gpt-4o-mini")),
-        provider=raw.get("provider", DEFAULT_PROVIDER),
-        input_cost_per_1m=float(raw.get("input_cost_per_1m_tokens", 0)),
-        output_cost_per_1m=float(raw.get("output_cost_per_1m_tokens", 0)),
-        params={k: raw[k] for k in ("temperature", "max_tokens") if k in raw},
+        name=name,
+        provider=section.get("provider", DEFAULT_PROVIDER),
+        input_cost_per_1m=float(section.get("input_cost_per_1m_tokens", inp)),
+        output_cost_per_1m=float(section.get("output_cost_per_1m_tokens", out)),
+        params={k: section[k] for k in ("temperature", "max_tokens") if k in section},
     )
 
 
-def load_settings(config_path: Path | None = None) -> Settings:
+def load_raw(config_path: Path | None = None) -> dict:
     path = config_path or (CONFIG_DIR / "models.yaml")
-    raw = yaml.safe_load(path.read_text())
+    return yaml.safe_load(path.read_text())
+
+
+def load_settings(config_path: Path | None = None) -> Settings:
+    raw = load_raw(config_path)
     tiers = {}
-    for key, m in raw["models"].items():
+    for m in raw["models"]:
+        if not m.get("tier_default"):
+            continue
         provider = m.get("provider", DEFAULT_PROVIDER)
         if provider not in PROVIDERS:
-            raise ValueError(f"unknown provider '{provider}' for tier '{key}'")
+            raise ValueError(f"unknown provider '{provider}' for model '{m['id']}'")
+        key = m["tier"]
+        if key in tiers:
+            raise ValueError(f"two tier_default models for tier '{key}'")
         tiers[key] = ModelTier(
             key=key,
-            name=m["name"],
+            name=m["id"],
             provider=provider,
-            input_cost_per_1m=float(m["input_cost_per_1m_tokens"]),
-            output_cost_per_1m=float(m["output_cost_per_1m_tokens"]),
+            input_cost_per_1m=float(m["input_cost_per_1m"]),
+            output_cost_per_1m=float(m["output_cost_per_1m"]),
             max_latency_ms=int(m["max_latency_ms"]),
             max_context_tokens=int(m["max_context_tokens"]),
             pricing_note=m.get("pricing_note", ""),
             params=tuple(sorted((m.get("params") or {}).items())),
+            cached_input_cost_per_1m=m.get("cached_input_cost_per_1m"),
         )
+    missing = [t for t in TIER_ORDER if t not in tiers]
+    if missing:
+        raise ValueError(f"models.yaml needs a tier_default model for: {missing}")
+    providers = raw.get("providers", {})
+
+    def base_url(p):
+        cfg = providers.get(p, {})
+        return os.getenv(cfg.get("base_url_env", f"{p.upper()}_BASE_URL"),
+                         cfg.get("default_base_url", ""))
+
+    def api_key(p):
+        cfg = providers.get(p, {})
+        return os.getenv(cfg.get("api_key_env", f"{p.upper()}_API_KEY"), "")
+
     return Settings(
         tiers=tiers,
-        router=_aux(raw.get("router", {}), "ROUTER_MODEL"),
-        evaluator=_aux(raw.get("evaluator", {}), "EVALUATOR_MODEL"),
+        router=_aux(raw, raw.get("router", {}), "ROUTER_MODEL"),
+        evaluator=_aux(raw, raw.get("evaluator", {}), "EVALUATOR_MODEL"),
         answer_params=raw.get("answer", {}),
-        api_keys={
-            "groq": os.getenv("GROQ_API_KEY", ""),
-            "openai": os.getenv("OPENAI_API_KEY", ""),
-            "openrouter": os.getenv("OPENROUTER_API_KEY", ""),
-        },
-        base_urls={
-            "groq": os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
-            "openai": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
-            "openrouter": os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-        },
+        api_keys={p: api_key(p) for p in PROVIDERS},
+        base_urls={p: base_url(p) for p in PROVIDERS},
         experiment_concurrency=int(os.getenv("EXPERIMENT_CONCURRENCY", "2")),
         demo_query_count=int(os.getenv(
             "DEMO_QUERY_COUNT",
             raw.get("experiment", {}).get("demo_query_count", 18))),
+        raw=raw,
+        price_registry_version=str(raw.get("price_registry_version", "unversioned")),
     )

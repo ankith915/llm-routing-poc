@@ -42,11 +42,14 @@ async def evaluate(query: str, expected_answer: str, criteria: str, answer: str,
         )
         m = re.search(r"\{.*\}", resp.content, re.DOTALL)
         data = json.loads(m.group(0)) if m else {}
-        score = int(data.get("score", 0))
+        raw = data.get("score")
+        if raw is None:
+            raise ValueError("judge returned no score")
+        score = int(float(raw))
         if not 1 <= score <= 5:
             raise ValueError(f"score out of range: {score}")
         return {"quality_score": score, "quality_rationale": data.get("rationale", ""),
                 "judge_model": judge.name}
-    except (LLMError, ValueError, json.JSONDecodeError, AttributeError) as e:
+    except (LLMError, ValueError, TypeError, json.JSONDecodeError, AttributeError) as e:
         return {"quality_score": None, "quality_rationale": f"evaluation failed: {str(e)[:120]}",
                 "judge_model": judge.name}

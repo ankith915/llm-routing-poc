@@ -1,0 +1,11 @@
+[
+  {"id": "TCK-5521", "title": "Customers unable to complete checkout", "priority": "P1", "requester": "Customer Support",
+   "created_at": "2026-08-18T10:26:00", "status": "open",
+   "body": "Since roughly 10:20 we have received 41 chat contacts and 9 phone calls from customers who reach the payment step and see 'Something went wrong, please try again'. Some customers report being charged twice after retrying; support has logged 6 refund requests so far. Our internal status page shows checkout-web at 502 and the payments dashboard shows the circuit breaker open. Customers on the mobile app and the website are both affected; guest checkout and logged-in checkout behave the same. Please confirm the root cause, an ETA, and whether we should tell customers to wait or to retry. Marketing has a promotional email scheduled for 11:00 that will drive traffic to checkout; we need a go/no-go by 10:45."},
+  {"id": "TCK-5522", "title": "Schedule the transactions analytics job", "priority": "P3", "requester": "Data Team",
+   "created_at": "2026-08-18T10:40:00", "status": "open",
+   "body": "The monthly reconciliation query (full scan of the transactions table, about 40 minutes) was run ad hoc against db-primary-01 at 10:18 today because the replica was lagging. We understand this coincided with the payment incident. Requesting a recurring schedule for this job at 02:00 UTC against db-replica-02, a statement timeout exemption for that window only, and guidance on whether a materialized view could replace the full scan. Nobody on the data team has production access after today's change, so a platform engineer will need to set the cron."},
+  {"id": "TCK-5518", "title": "search-svc memory growth after cache resize", "priority": "P3", "requester": "Search Team",
+   "created_at": "2026-08-17T15:02:00", "status": "in_progress",
+   "body": "After yesterday's cache resize from 2 GB to 6 GB, search-svc heap usage has climbed steadily (85% at 09:40, 88% at 10:00, 91% at 10:24 today). No errors yet and latency is stable around 215 ms. We believe the JVM heap ceiling was not raised alongside the cache size. Plan: restart search-svc in the 22:00 maintenance window with -Xmx raised to 10g, and add a heap alert at 85%. This is unrelated to the payment incident; please do not bundle it into INC-1001."}
+]

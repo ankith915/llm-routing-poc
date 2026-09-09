@@ -1,0 +1,14 @@
+[
+  {"id": "RB-101", "title": "db-primary-01: connection exhaustion",
+   "owner": "Data Platform (DBA on-call)",
+   "body": "Applies when db-primary-01 reports 'Max connections reached' or connection-pool saturation alerts fire on dependent services.\n1. Identify the top connection consumers with pg_stat_activity grouped by application_name.\n2. Terminate runaway analytical queries with pg_terminate_backend; long full-table scans on the transactions table are the usual culprit.\n3. If the load comes from a batch or analytics job, pause the job and reschedule it against the read replica db-replica-02 outside the 09:00-18:00 peak window.\n4. Confirm statement_timeout is enforced at 30 seconds for the analytics role; it is disabled by default on new roles.\n5. Escalate to the DBA on-call if connections stay above 90% of the limit for more than 10 minutes.\nPrevention: alert at 70% and 85% of max_connections; keep analytics workloads off the primary."},
+  {"id": "RB-207", "title": "payment-api: circuit breaker open",
+   "owner": "Payments team",
+   "body": "The payment-api circuit breaker opens after 5 consecutive database timeouts and retries a half-open probe every 30 seconds.\nDo NOT restart payment-api pods while the breaker is open: the dependency (db-primary-01) is the failing component and a restart only resets the breaker's failure count.\nThe breaker closes automatically once probes succeed. A manual reset (kubectl annotate deploy/payment-api breaker=reset) is only permitted after db-primary-01 has been green for 5 minutes.\nCustomer impact: checkout-web returns 502 while the breaker is open; the status page must be updated within 20 minutes for a HIGH incident."},
+  {"id": "RB-311", "title": "Deployment rollback procedure",
+   "owner": "Platform Engineering",
+   "body": "Rollback with: deployctl rollback <service> <previous-version>. Rollbacks are permitted within 24 hours of a deployment and require approval from the service owner in the #deploys channel.\nBefore rolling back, confirm the deployment is actually implicated: compare the first error timestamp with the rollout completion time. A service that ran cleanly for more than 30 minutes after rollout is rarely fixed by a rollback.\nRecent: payment-api v2.4.1 completed rollout at 09:20 on 2026-08-18."},
+  {"id": "POL-9", "title": "On-call escalation policy",
+   "owner": "SRE",
+   "body": "HIGH severity: page the primary on-call within 5 minutes, the secondary after 15 minutes without acknowledgement, and the engineering manager after 30 minutes. A status-page update is required within 20 minutes.\nMEDIUM severity: notify the owning team channel; page only if customer impact is confirmed.\nLOW severity: ticket only, reviewed at the next weekday stand-up."}
+]

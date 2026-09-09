@@ -54,12 +54,13 @@ def test_comparison_savings_and_retention():
     assert by["none"]["cost_savings_pct"] == pytest.approx(0.0)
 
 
-def test_model_utilization_percentages():
+def test_tier_utilization_percentages():
     records = [_record("intelligent", t, 0.01, 100, 5) for t in
                ["cheap"] * 7 + ["medium"] * 2 + ["premium"]]
     summ = metrics.strategy_summary(records, "intelligent")
-    assert summ["model_utilization"]["cheap"]["pct"] == 70.0
-    assert summ["model_utilization"]["premium"]["pct"] == 10.0
+    assert summ["tier_utilization"]["cheap"]["pct"] == 70.0
+    assert summ["tier_utilization"]["premium"]["pct"] == 10.0
+    assert summ["frontier_pct"] == 10.0
 
 
 def test_quality_breakdowns():

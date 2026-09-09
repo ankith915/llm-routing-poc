@@ -1,55 +1,172 @@
-# Model tier configuration.
-# Pricing is USD per 1M tokens.
+# Model registry and price registry.
 #
-# cheap/medium run on Groq; premium/router/evaluator on OpenAI. Every price
-# here is a real billed rate, so the cost comparison is actual dollars on both
-# sides - no "reference pricing" asterisk as with OpenRouter's free endpoints.
+# Every price is a real billed rate in USD per 1M tokens. Do not bury prices in
+# application code: backend/optimizer/pricing.py is the only cost calculator
+# and it reads exclusively from this file.
 #
-# Groq model ids and prices verified against the live /models endpoint and
-# console.groq.com/docs/models on 2026-09-02. Re-verify before quoting numbers.
+# price_registry_version / effective_date travel with every ledger record, so a
+# price change never silently rewrites history.
+#
+# Verification: Groq ids and prices checked against the live /models endpoint
+# and console.groq.com/docs/models on 2026-09-02; OpenAI prices against
+# openai.com/api/pricing on 2026-09-02. Re-verify before quoting to a client.
 #
 # NOTE ON reasoning_effort: the gpt-oss models are reasoning models. Left at
 # their default they spend 170-215 completion tokens on hidden reasoning, which
-# at max_tokens 700 truncates the visible answer mid-sentence (finish_reason
-# "length") or returns nothing at all. "low" cuts that to ~25-30 tokens and
-# returns complete answers. Do not remove it without re-measuring.
+# at max_tokens 900 truncates the visible answer (finish_reason "length") or
+# returns nothing. "low" cuts that to ~25-30 tokens. Measured 2026-09-02; the
+# numbers are kept below (reasoning_tokens_measured) so the planner can put an
+# *estimated* value on lowering reasoning, labelled as such.
 #
-# Groq rate limits (free plan, gpt-oss): 30 RPM, 1K RPD, 8K TPM, 200K TPD.
-# The 8K TPM ceiling puts a ~7.7 minute floor on an 18-query experiment. The
-# Developer plan lifts it. EXPERIMENT_CONCURRENCY defaults to 2 for the free
-# plan; raise it to 8 only after upgrading.
+# quality_priors: per-difficulty mean judge score (1-5). "measured" entries come
+# from the graded runs in this repo (n = graded requests). "assumed" entries are
+# placeholders for cells no run has covered yet; the router marks any estimate
+# that rests on an assumed prior, and policy can refuse to route on them.
+
+price_registry_version: "2026-09-02.1"
+effective_date: "2026-09-02"
+
+providers:
+  groq:
+    label: Groq
+    base_url_env: GROQ_BASE_URL
+    api_key_env: GROQ_API_KEY
+    default_base_url: https://api.groq.com/openai/v1
+    prompt_cache: false          # not claimed until usage reports cached tokens
+    batch_discount: null         # Groq Batch API pricing changed in 2025; not modeled until verified
+    rate_limit_note: "free plan: 30 RPM, 8K TPM on gpt-oss; Developer plan lifts it"
+  openai:
+    label: OpenAI
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+    default_base_url: https://api.openai.com/v1
+    prompt_cache: true           # automatic prefix caching >= 1024 tokens; usage.prompt_tokens_details.cached_tokens
+    batch_discount: 0.5          # Batch API: 50% off input and output, 24h window (platform.openai.com/docs/guides/batch)
+  openrouter:
+    label: OpenRouter
+    base_url_env: OPENROUTER_BASE_URL
+    api_key_env: OPENROUTER_API_KEY
+    default_base_url: https://openrouter.ai/api/v1
+    prompt_cache: false
+    batch_discount: null
+
 models:
-  cheap:
-    name: "openai/gpt-oss-20b"
+  - id: openai/gpt-oss-20b
+    label: GPT-OSS 20B
     provider: groq
-    input_cost_per_1m_tokens: 0.075
-    output_cost_per_1m_tokens: 0.30
+    tier: cheap
+    tier_default: true
+    role: workhorse
+    input_cost_per_1m: 0.075
+    output_cost_per_1m: 0.30
+    cached_input_cost_per_1m: null
+    max_context_tokens: 131072
     max_latency_ms: 3000
-    max_context_tokens: 131072
-    params:
-      reasoning_effort: low
-  medium:
-    name: "openai/gpt-oss-120b"
+    latency_profile: {p50_ms: 819, p95_ms: 1155, source: "measured 2026-09-08, n=14"}
+    capabilities: {tools: true, json_mode: true, reasoning_controls: true, structured_output: false, streaming: true}
+    reasoning_default: medium
+    reasoning_tokens_measured: {default: 170, low: 25, source: "measured 2026-09-02"}
+    params: {reasoning_effort: low}
+    quality_priors:
+      SIMPLE: {score: 4.43, n: 14, source: measured}
+      MEDIUM: {score: 3.9, source: assumed}
+      HARD:   {score: 3.2, source: assumed}
+    enabled: true
+
+  - id: openai/gpt-oss-120b
+    label: GPT-OSS 120B
     provider: groq
-    input_cost_per_1m_tokens: 0.15
-    output_cost_per_1m_tokens: 0.60
-    max_latency_ms: 5000
+    tier: medium
+    tier_default: true
+    role: balanced
+    input_cost_per_1m: 0.15
+    output_cost_per_1m: 0.60
+    cached_input_cost_per_1m: null
     max_context_tokens: 131072
-    params:
-      reasoning_effort: low
-  premium:
-    name: "gpt-4.1"
+    max_latency_ms: 5000
+    latency_profile: {p50_ms: 1525, p95_ms: 2447, source: "measured 2026-09-08, n=11"}
+    capabilities: {tools: true, json_mode: true, reasoning_controls: true, structured_output: false, streaming: true}
+    reasoning_default: medium
+    reasoning_tokens_measured: {default: 214, low: 32, source: "measured 2026-09-02"}
+    params: {reasoning_effort: low}
+    quality_priors:
+      SIMPLE: {score: 4.7, source: assumed}
+      MEDIUM: {score: 4.91, n: 11, source: measured}
+      HARD:   {score: 4.1, source: assumed}
+    enabled: true
+
+  - id: gpt-4.1-mini
+    label: GPT-4.1 mini
     provider: openai
-    input_cost_per_1m_tokens: 2.00
-    output_cost_per_1m_tokens: 8.00
+    tier: medium
+    tier_default: false
+    role: balanced
+    input_cost_per_1m: 0.40
+    output_cost_per_1m: 1.60
+    cached_input_cost_per_1m: 0.10
+    max_context_tokens: 1047576
+    max_latency_ms: 6000
+    latency_profile: {p50_ms: null, p95_ms: null, source: unmeasured}
+    capabilities: {tools: true, json_mode: true, reasoning_controls: false, structured_output: true, streaming: true}
+    reasoning_default: null
+    params: {}
+    quality_priors:
+      SIMPLE: {score: 4.6, source: assumed}
+      MEDIUM: {score: 4.4, source: assumed}
+      HARD:   {score: 4.0, source: assumed}
+    enabled: true
+
+  - id: gpt-4.1
+    label: GPT-4.1
+    provider: openai
+    tier: premium
+    tier_default: true
+    role: frontier
+    input_cost_per_1m: 2.00
+    output_cost_per_1m: 8.00
+    cached_input_cost_per_1m: 0.50
+    max_context_tokens: 1047576
     max_latency_ms: 10000
-    max_context_tokens: 1000000
+    latency_profile: {p50_ms: 2402, p95_ms: 3793, source: "measured 2026-09-08, n=29"}
+    capabilities: {tools: true, json_mode: true, reasoning_controls: false, structured_output: true, streaming: true}
+    reasoning_default: null
+    params: {}
+    quality_priors:
+      SIMPLE: {score: 4.86, n: 7, source: measured}
+      MEDIUM: {score: 4.57, n: 7, source: measured}
+      HARD:   {score: 4.67, n: 15, source: measured}
+    enabled: true
+
+  - id: gpt-4o-mini
+    label: GPT-4o mini
+    provider: openai
+    tier: cheap
+    tier_default: false
+    role: auxiliary            # router + judge; not an answer candidate by default
+    input_cost_per_1m: 0.15
+    output_cost_per_1m: 0.60
+    cached_input_cost_per_1m: 0.075
+    max_context_tokens: 128000
+    max_latency_ms: 4000
+    latency_profile: {p50_ms: null, p95_ms: null, source: unmeasured}
+    capabilities: {tools: true, json_mode: true, reasoning_controls: false, structured_output: true, streaming: true}
+    reasoning_default: null
+    params: {}
+    quality_priors:
+      SIMPLE: {score: 4.3, source: assumed}
+      MEDIUM: {score: 4.0, source: assumed}
+      HARD:   {score: 3.5, source: assumed}
+    enabled: false             # measure it with the workbench before routing to it
+
+embeddings:
+  - id: text-embedding-3-small
+    provider: openai
+    input_cost_per_1m: 0.02
+    dimensions: 1536
 
 router:
-  model: "gpt-4o-mini"
+  model: gpt-4o-mini
   provider: openai
-  input_cost_per_1m_tokens: 0.15
-  output_cost_per_1m_tokens: 0.60
   temperature: 0
   max_tokens: 300
 
@@ -58,13 +175,10 @@ answer:
   max_tokens: 900
 
 evaluator:
-  model: "gpt-4o-mini"
+  model: gpt-4o-mini
   provider: openai
   temperature: 0
   max_tokens: 300
 
-# How many test queries a "quick" demo run uses. Stratified across complexity
-# bands, so 18 gives 7 SIMPLE / 6 MEDIUM / 5 HARD rather than the first 18 in
-# file order (which would be 14 SIMPLE, 4 MEDIUM and no HARD at all).
 experiment:
   demo_query_count: 18

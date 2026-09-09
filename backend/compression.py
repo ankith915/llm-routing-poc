@@ -73,9 +73,8 @@ def available() -> bool:
 def naive_json_tokens(query: str) -> int:
     """Tokens a raw compact-JSON dump of the same data would cost."""
     ds = telemetry.load_dataset()
-    subset = {"metrics": ds["metrics"], "incidents": ds["incidents"]}
-    if telemetry.needs_logs(query):
-        subset["logs"] = ds["logs"]
+    # Mirror exactly the sections build_context would send for this query.
+    subset = {name: ds[name] for name in telemetry.baseline_section_names(query)}
     return count_tokens(json.dumps(subset, separators=(",", ":")))
 
 

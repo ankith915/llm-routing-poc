@@ -6,3 +6,4 @@ pydantic==2.10.4
 python-dotenv==1.0.1
 asyncpg==0.30.0
 tiktoken==0.14.0
+jsonschema==4.26.0

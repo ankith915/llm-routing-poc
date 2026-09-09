@@ -14,7 +14,7 @@ from backend.config.loader import load_settings
 from backend.router import rule_router
 from backend.llm.client import LLMError, LLMResponse
 
-from test_pipeline_offline import FakeClient, store  # noqa: F401  (fixture import)
+from conftest import FakeClient  # noqa: F401
 
 
 # --------------------------------------------------------------------------
@@ -22,13 +22,18 @@ from test_pipeline_offline import FakeClient, store  # noqa: F401  (fixture impo
 # --------------------------------------------------------------------------
 
 def test_select_queries_preserves_complexity_ratio():
-    """18 of 36 (14S/12M/10H) must come out 7/6/5 - not the first 18 in order."""
+    """A subset must keep each band within one seat of its proportional share -
+    not the first 18 in file order, which would be almost all SIMPLE."""
+    all_q = telemetry.load_test_queries()
     picked = telemetry.select_queries(18)
     assert len(picked) == 18
     counts = {}
     for q in picked:
         counts[q["complexity"]] = counts.get(q["complexity"], 0) + 1
-    assert counts == {"SIMPLE": 7, "MEDIUM": 6, "HARD": 5}
+    for band, n in counts.items():
+        share = sum(1 for q in all_q if q["complexity"] == band) * 18 / len(all_q)
+        assert abs(n - share) < 1.0, (band, n, share)
+    assert counts["HARD"] >= 3
 
 
 def test_select_queries_never_returns_only_simple():

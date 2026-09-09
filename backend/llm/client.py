@@ -19,10 +19,25 @@ class LLMResponse:
     input_tokens: int
     output_tokens: int
     latency_ms: int
+    cached_input_tokens: int = 0
+    reasoning_tokens: int = 0
+    finish_reason: str | None = None
+    ttft_ms: int | None = None
 
 
 class LLMError(RuntimeError):
-    pass
+    def __init__(self, msg: str, kind: str = "error", injected: bool = False):
+        super().__init__(msg)
+        self.kind = kind            # error | timeout | rate_limit | empty
+        self.injected = injected
+
+
+class InjectedFault(LLMError):
+    """Raised by the chaos hook so the ledger can label the failure as injected."""
+
+    def __init__(self, provider: str, mode: str):
+        kind = {"fail": "error", "timeout": "timeout", "rate_limit": "rate_limit"}.get(mode, "error")
+        super().__init__(f"injected {mode} for provider {provider} (chaos mode)", kind, injected=True)
 
 
 # Historical name - kept so existing imports and `except` clauses keep working.
@@ -39,12 +54,14 @@ class LLMClient:
     """Works against any OpenAI-compatible /chat/completions endpoint."""
 
     def __init__(self, api_key: str, base_url: str, timeout: float = 120.0,
-                 provider: str = "groq"):
+                 provider: str = "groq", chaos=None, on_result=None):
         if not api_key:
             raise LLMError(
                 f"API key for '{provider}' is not set. Copy .env.example to .env and fill it in."
             )
         self.provider = provider
+        self.chaos = chaos              # callable(provider) -> mode | None
+        self.on_result = on_result      # callable(provider, ok, latency_ms, error)
         headers = {"Authorization": f"Bearer {api_key}"}
         if provider == "openrouter":
             headers |= {"HTTP-Referer": "http://localhost:8000", "X-Title": "llm-routing-poc"}
@@ -62,10 +79,17 @@ class LLMClient:
         }
         if self.provider == "openrouter":
             payload["usage"] = {"include": True}
+        mode = self.chaos(self.provider) if self.chaos else None
+        if mode in ("fail", "timeout", "rate_limit"):
+            err = InjectedFault(self.provider, mode)
+            self._report(False, None, str(err))
+            raise err
         last_err = None
         for attempt in range(retries + 1):
             start = time.perf_counter()
             try:
+                if mode == "slow":
+                    await asyncio.sleep(2.0)
                 resp = await self._client.post("/chat/completions", json=payload)
                 latency_ms = int((time.perf_counter() - start) * 1000)
                 if resp.status_code == 429:
@@ -90,20 +114,50 @@ class LLMClient:
                         f"reasoning_tokens="
                         f"{usage.get('completion_tokens_details', {}).get('reasoning_tokens', 0)})"
                     )
-                return LLMResponse(
+                out = LLMResponse(
                     content=content,
                     model_used=data.get("model", model),
                     provider=data.get("provider", self.provider),
                     input_tokens=int(usage.get("prompt_tokens", 0)),
                     output_tokens=int(usage.get("completion_tokens", 0)),
                     latency_ms=latency_ms,
+                    cached_input_tokens=int((usage.get("prompt_tokens_details") or {}).get("cached_tokens", 0) or 0),
+                    reasoning_tokens=int((usage.get("completion_tokens_details") or {}).get("reasoning_tokens", 0) or 0),
+                    finish_reason=choice.get("finish_reason"),
                 )
+                self._report(True, latency_ms, None)
+                return out
             except (httpx.HTTPError, LLMError, KeyError) as e:
                 last_err = e
                 if attempt < retries:
                     wait = 12.0 if "429" in str(e) else 1.5 * (attempt + 1)
                     await asyncio.sleep(wait)
-        raise LLMError(f"LLM call failed for {model} ({self.provider}): {last_err}")
+        kind = "rate_limit" if "429" in str(last_err) else ("timeout" if isinstance(last_err, httpx.TimeoutException) else "error")
+        self._report(False, None, str(last_err))
+        raise LLMError(f"LLM call failed for {model} ({self.provider}): {last_err}", kind)
+
+    async def embed(self, model: str, text: str) -> dict:
+        """Embeddings endpoint (OpenAI-compatible). Returns vector, tokens, latency."""
+        mode = self.chaos(self.provider) if self.chaos else None
+        if mode in ("fail", "timeout", "rate_limit"):
+            raise InjectedFault(self.provider, mode)
+        start = time.perf_counter()
+        try:
+            resp = await self._client.post("/embeddings", json={"model": model, "input": text})
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPError as e:
+            raise LLMError(f"embedding call failed ({self.provider}): {e}")
+        return {"vector": data["data"][0]["embedding"],
+                "tokens": int((data.get("usage") or {}).get("prompt_tokens", 0)),
+                "latency_ms": int((time.perf_counter() - start) * 1000)}
+
+    def _report(self, ok: bool, latency_ms, error):
+        if self.on_result:
+            try:
+                self.on_result(self.provider, ok, latency_ms, error)
+            except Exception:       # health bookkeeping must never break a call
+                pass
 
     async def aclose(self):
         await self._client.aclose()
@@ -120,12 +174,13 @@ class ClientPool:
         self._clients = clients
 
     @classmethod
-    def from_settings(cls, settings) -> "ClientPool":
+    def from_settings(cls, settings, chaos=None, on_result=None) -> "ClientPool":
         clients = {}
         for provider, key in settings.api_keys.items():
             if key:
                 clients[provider] = LLMClient(
-                    key, settings.base_urls[provider], provider=provider)
+                    key, settings.base_urls[provider], provider=provider,
+                    chaos=chaos, on_result=on_result)
         return cls(clients)
 
     @property

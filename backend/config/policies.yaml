@@ -1,0 +1,108 @@
+# Policy documents. Precedence, lowest to highest:
+#   defaults  <  tenant  <  application  <  per-request overrides
+# Feature flags: policy `flags` < FLAG_<NAME> environment variables < runtime
+# overrides set through the API (kept in the store, for demos).
+#
+# Quality scores are on the judge's 1-5 scale. quality_target is the minimum
+# *predicted* quality a route must satisfy; quality_gate_threshold is the
+# minimum *observed* score below which the answer is escalated.
+
+policy_version: "2026-09-09.1"
+
+flags:
+  ENABLE_EXACT_CACHE: true
+  ENABLE_SEMANTIC_CACHE: true
+  ENABLE_CONTEXT_OPTIMIZATION: true
+  ENABLE_MODEL_ROUTING: true
+  ENABLE_REASONING_OPTIMIZATION: true
+  ENABLE_BATCH_OPTIMIZATION: true
+  ENABLE_QUALITY_GATE: true
+  ENABLE_ESCALATION: true
+  ENABLE_FALLBACK: true
+  ENABLE_SHADOW_MODE: true
+  ENABLE_RECOMMENDATIONS: true
+  ENABLE_LLM_ROUTER_FALLBACK: true     # LLM router only when the local classifier is unsure
+
+defaults:
+  environment: production
+  sensitivity_class: internal            # public | internal | confidential | restricted
+  sla_class: interactive                 # interactive | near_realtime | batch | offline
+  quality_target: 4.0
+  quality_gate_threshold: 3.5
+  latency_target_ms: 6000
+  max_cost_per_request_usd: 0.05
+  frontier_allowed: true
+  frontier_preferred: false
+  allowed_providers: [groq, openai]
+  allowed_models: []                     # empty = every enabled registry model
+  denied_models: []
+  allow_unmeasured_models: false         # route only on measured quality unless overridden
+  provider_sensitivity:                  # providers permitted per sensitivity class
+    public: [groq, openai, openrouter]
+    internal: [groq, openai]
+    confidential: [openai]
+    restricted: []                       # nothing external: request is rejected
+  reasoning_policy: adaptive             # adaptive | minimum | model_default
+  output_budget_policy: adaptive         # adaptive | fixed
+  cache:
+    exact: {enabled: true, ttl_seconds: 3600}
+    semantic:
+      enabled: true
+      embedder: auto                     # auto | openai | local
+      threshold: 0.92                    # operating point for a real embedding model
+      lexical_threshold: 0.30            # operating point for the local bag-of-words fallback
+      ttl_seconds: 1800
+  compression:
+    mode: tier_aware                     # off | tier_aware | always
+    min_tier: medium                     # compress only for this tier and above
+  execution_mode_policy: auto            # auto | force_interactive | force_batch
+  fallback: {enabled: true, max_attempts: 3}
+  escalation: {enabled: true, max_escalations: 1}
+  classifier:
+    llm_router_confidence_threshold: 0.55
+  budget:
+    daily_usd: null
+    monthly_usd: null
+    soft_threshold: 0.8                  # pressure above which cheaper routes are preferred
+    pressure_quality_relaxation: 0.0     # never relax quality for money by default
+  prompt_version: "v3"
+  knowledge_version: "telemetry-2026-08-18"
+
+tenants:
+  acme:
+    label: Acme Retail
+    budget: {daily_usd: 5.0, monthly_usd: 100.0}
+    applications:
+      ops-assistant:
+        label: IT Operations Assistant
+        feature_id: incident-chat
+        sla_class: interactive
+        quality_target: 4.0
+        latency_target_ms: 6000
+        max_cost_per_request_usd: 0.05
+        budget: {daily_usd: 3.0, monthly_usd: 60.0}
+      ticket-enrichment:
+        label: Ticket Enrichment (nightly)
+        feature_id: enrichment
+        sla_class: batch
+        quality_target: 3.8
+        latency_target_ms: 86400000
+        max_cost_per_request_usd: 0.02
+        budget: {daily_usd: 1.0, monthly_usd: 20.0}
+      finance-copilot:
+        label: Finance Copilot
+        feature_id: finance
+        sensitivity_class: confidential
+        quality_target: 4.3
+        frontier_preferred: true
+  globex:
+    label: Globex Bank
+    sensitivity_class: confidential
+    budget: {daily_usd: 2.0, monthly_usd: 40.0}
+    applications:
+      kb-search:
+        label: Knowledge Base Search
+        feature_id: kb
+        quality_target: 4.2
+        cache:
+          semantic: {threshold: 0.95, lexical_threshold: 0.45, ttl_seconds: 900}

@@ -1,110 +1,709 @@
 [
-  {"id": "Q-01", "complexity": "SIMPLE", "query": "What is the current CPU usage of payment-api?",
-   "expected_answer": "87% (latest metric at 10:25).",
-   "criteria": "States payment-api current CPU is 87%."},
-  {"id": "Q-02", "complexity": "SIMPLE", "query": "Is payment-api currently healthy?",
-   "expected_answer": "No. It is degraded: database connection timeouts, circuit breaker opened at 10:23, open incident INC-1001 (HIGH).",
-   "criteria": "Says payment-api is NOT healthy and mentions at least one supporting signal (errors, circuit breaker, or INC-1001)."},
-  {"id": "Q-03", "complexity": "SIMPLE", "query": "How many ERROR-level log entries occurred in the last hour?",
-   "expected_answer": "12 ERROR-level log entries between 09:25 and 10:25.",
-   "criteria": "Counts 12 ERROR log entries (11-13 acceptable if reasoning shown)."},
-  {"id": "Q-04", "complexity": "SIMPLE", "query": "What is the current memory utilization of payment-api?",
-   "expected_answer": "72%.",
-   "criteria": "States payment-api memory is 72%."},
-  {"id": "Q-05", "complexity": "SIMPLE", "query": "Which services are currently down?",
-   "expected_answer": "inventory-svc is down (marked DOWN by load balancer at 09:50, no metrics since 09:45). payment-api is severely degraded (circuit breaker open) but not fully down.",
-   "criteria": "Identifies inventory-svc as down. Bonus for noting payment-api is degraded."},
-  {"id": "Q-06", "complexity": "SIMPLE", "query": "What is the current latency of payment-api?",
-   "expected_answer": "About 5230 ms (5.2 s), up from a ~110 ms baseline.",
-   "criteria": "States current payment-api latency around 5230ms / 5.2s."},
-  {"id": "Q-07", "complexity": "SIMPLE", "query": "Which service has the highest memory usage right now?",
-   "expected_answer": "search-svc at 91%.",
-   "criteria": "Identifies search-svc with 91% memory."},
-  {"id": "Q-08", "complexity": "SIMPLE", "query": "What is the severity of incident INC-1001?",
-   "expected_answer": "HIGH.",
-   "criteria": "States severity HIGH."},
-  {"id": "Q-09", "complexity": "SIMPLE", "query": "Which service does incident INC-1001 affect?",
-   "expected_answer": "payment-api.",
-   "criteria": "States payment-api."},
-  {"id": "Q-10", "complexity": "SIMPLE", "query": "What is the current CPU usage of auth-svc?",
-   "expected_answer": "34%.",
-   "criteria": "States auth-svc CPU is 34%."},
-  {"id": "Q-11", "complexity": "SIMPLE", "query": "How many incidents are currently open?",
-   "expected_answer": "2 open incidents: INC-1001 (payment-api, HIGH) and INC-1003 (inventory-svc, MEDIUM).",
-   "criteria": "States 2 open incidents; ideally names INC-1001 and INC-1003."},
-  {"id": "Q-12", "complexity": "SIMPLE", "query": "What is the current status of db-primary-01?",
-   "expected_answer": "Saturated: at its 200/200 connection ceiling, CPU 78%, slow queries around 2.1-2.4s.",
-   "criteria": "Mentions db-primary-01 is at max connections (200/200) and/or degraded with slow queries."},
-  {"id": "Q-13", "complexity": "SIMPLE", "query": "How many ERROR log entries did checkout-web produce?",
-   "expected_answer": "3 (two 'payment-api returned 502' and one 'checkout flow aborted for 37 users').",
-   "criteria": "States 3 checkout-web ERROR entries."},
-  {"id": "Q-14", "complexity": "SIMPLE", "query": "Is auth-svc currently healthy?",
-   "expected_answer": "Yes. CPU 34%, memory 48%, latency ~45ms, no errors or incidents.",
-   "criteria": "Says auth-svc is healthy with normal metrics."},
-  {"id": "Q-15", "complexity": "MEDIUM", "query": "Why is payment-api experiencing high latency?",
-   "expected_answer": "Its database calls are timing out: db-primary-01 has slow queries (2.1s) and hit its 200-connection ceiling, so payment-api threads block on the connection pool (82%+ capacity), pushing latency from ~112ms to 5.2s.",
-   "criteria": "Attributes latency to database connection saturation / slow queries on db-primary-01, not to payment-api itself."},
-  {"id": "Q-16", "complexity": "MEDIUM", "query": "Which service generated the most errors?",
-   "expected_answer": "payment-api with 4 ERROR entries (checkout-web has 3).",
-   "criteria": "Identifies payment-api as the top error producer (4 errors)."},
-  {"id": "Q-17", "complexity": "MEDIUM", "query": "What changed shortly before the increase in payment-api CPU usage?",
-   "expected_answer": "At 10:18 an ad-hoc analytics batch job (full scan of transactions) started on db-primary-01; DB connections then climbed and payment-api CPU rose from 38% to 87% as requests backed up.",
-   "criteria": "Points to the analytics batch job started at 10:18 on db-primary-01 (or DB connection climb) as the preceding change."},
-  {"id": "Q-18", "complexity": "MEDIUM", "query": "Which server has the highest error rate?",
-   "expected_answer": "server-01 (payment-api) with 4 ERROR entries; server-02 has 3, server-05 has 2.",
-   "criteria": "Identifies server-01 as having the most errors."},
-  {"id": "Q-19", "complexity": "MEDIUM", "query": "Is the database contributing to the payment-api latency?",
-   "expected_answer": "Yes. db-primary-01 shows slow queries (2.1-2.4s), reached max connections 200/200 at 10:22:40, and payment-api errors are database connection timeouts / 504s from the DB.",
-   "criteria": "Answers yes and cites DB evidence (slow queries, max connections, or timeout errors)."},
-  {"id": "Q-20", "complexity": "MEDIUM", "query": "Compare the current CPU usage of payment-api and checkout-web.",
-   "expected_answer": "payment-api 87% vs checkout-web 41%; payment-api is more than twice as high and climbing.",
-   "criteria": "States both values (87% and 41%) and compares them."},
-  {"id": "Q-21", "complexity": "MEDIUM", "query": "Which services were affected by the database issue?",
-   "expected_answer": "payment-api (timeouts, circuit breaker), checkout-web (502s, aborted checkouts), and notification-svc (retry queue overflow). inventory-svc and search-svc issues are unrelated.",
-   "criteria": "Lists payment-api and checkout-web (notification-svc a bonus) as affected by the DB issue."},
-  {"id": "Q-22", "complexity": "MEDIUM", "query": "What pattern do you see in payment-api latency over the last hour?",
-   "expected_answer": "Stable ~110-118ms until 10:15, then a sharp climb: 640ms at 10:20 and ~5.2s by 10:22 onward - a step change coinciding with DB connection saturation.",
-   "criteria": "Describes flat baseline then sharp increase starting around 10:20."},
-  {"id": "Q-23", "complexity": "MEDIUM", "query": "Why is the notification-svc retry queue growing?",
-   "expected_answer": "Downstream payment failures: notifications retry against failing payment flows, so the queue grew from 12 to 1204 and overflowed at 10:24.",
-   "criteria": "Links queue growth to downstream payment-api/DB failures causing retries."},
-  {"id": "Q-24", "complexity": "MEDIUM", "query": "Is search-svc memory usage a concern, and is it related to the payment incident?",
-   "expected_answer": "Yes, a concern: 91% and rising (85->88->91), risk of OOM. But it is unrelated to INC-1001 - it predates the DB issue and matches resolved incident INC-0997 (cache resize).",
-   "criteria": "Flags 91% memory as a concern AND states it is unrelated to the payment/DB incident."},
-  {"id": "Q-25", "complexity": "MEDIUM", "query": "What is the relationship between db-primary-01 connection count and payment-api errors?",
-   "expected_answer": "Direct correlation: connections climbed 121->150->182->200; payment-api timeouts began as the pool neared saturation and errors peaked once 200/200 was reached at 10:22:40.",
-   "criteria": "Describes the correlation between rising DB connections and payment-api timeout errors."},
-  {"id": "Q-26", "complexity": "MEDIUM", "query": "Which incident is related to the checkout errors?",
-   "expected_answer": "INC-1001 (payment-api, HIGH): checkout-web 502s are caused by payment-api failures from DB connection exhaustion.",
-   "criteria": "Links checkout-web errors to INC-1001 / the payment-api incident."},
-  {"id": "Q-27", "complexity": "HARD", "query": "Analyze the payment-api incident and identify the most likely root cause.",
-   "expected_answer": "Root cause: the ad-hoc analytics batch job started at 10:18 on db-primary-01 (full scan of transactions) caused slow queries, which held connections longer, exhausting the 200-connection limit; payment-api then timed out, opened its circuit breaker, and checkout-web cascaded. The 09:20 deployment is a red herring - the service was healthy for an hour after it.",
-   "criteria": "Identifies the analytics batch job -> slow queries -> connection exhaustion chain as root cause (not payment-api code, not the deployment)."},
-  {"id": "Q-28", "complexity": "HARD", "query": "Correlate the CPU, latency and database timeout data and explain what caused the outage.",
-   "expected_answer": "DB connections rose after the 10:18 batch job; slow queries (2.1s) appeared at 10:20:48; payment-api latency jumped 118ms->640ms->5.2s while its CPU climbed 38->87% from request backlog; timeouts started 10:21:32 and the DB hit 200/200 at 10:22:40. Causality flows from the database to the application: connection saturation, not app CPU, caused the outage.",
-   "criteria": "Correlates the three signals in time order and concludes DB connection saturation caused the outage (CPU rise is a symptom)."},
-  {"id": "Q-29", "complexity": "HARD", "query": "Analyze the sequence of events and determine whether the problem originated in the application, database or infrastructure.",
-   "expected_answer": "The database. First anomaly is on db-primary-01 (batch job 10:18, slow query 10:20:48, max connections 10:22:40); application errors follow it. Infrastructure (network) is only implicated in the separate inventory-svc issue.",
-   "criteria": "Concludes the origin is the database layer, with evidence ordering; distinguishes the unrelated inventory-svc network issue."},
-  {"id": "Q-30", "complexity": "HARD", "query": "Given the available logs and metrics, identify the root cause and recommend remediation steps.",
-   "expected_answer": "Root cause: analytics batch job exhausting db-primary-01 connections via slow full-table scans. Remediation: kill/reschedule the batch job off-peak or to a read replica, add statement timeouts and query limits, raise/partition connection pools, add circuit-breaker backoff, alert on connection-pool utilization.",
-   "criteria": "Identifies the DB connection exhaustion root cause AND gives at least two concrete remediation steps."},
-  {"id": "Q-31", "complexity": "HARD", "query": "Build a timeline of the cascading failure from first symptom to circuit breaker opening.",
-   "expected_answer": "10:18 batch job starts; 10:20:11 payment-api pool 82%; 10:20:48 DB slow query 2.1s; 10:21:32-33 payment-api DB timeouts/504; 10:21:51 checkout-web 502; 10:22:07 notification queue 1204; 10:22:40 DB max connections 200/200; 10:22:55 more timeouts; 10:23:05 checkout 502; 10:23:15 circuit breaker opens.",
-   "criteria": "Produces a correct time-ordered chain from the 10:18 batch job (or 10:20 pool warning) to the 10:23:15 circuit breaker, including DB and checkout events."},
-  {"id": "Q-32", "complexity": "HARD", "query": "Are the search-svc memory issue and the payment-api incident related? Explain with evidence.",
-   "expected_answer": "No. search-svc memory was already 85% at 09:40, before the 10:18 trigger; it runs on server-04 with no DB dependency in the failure chain, and matches resolved incident INC-0997 (cache resize). The trends are independent.",
-   "criteria": "Concludes unrelated, citing timing (pre-existing trend) and/or INC-0997 as evidence."},
-  {"id": "Q-33", "complexity": "HARD", "query": "What remediation steps would prevent recurrence of the database connection exhaustion?",
-   "expected_answer": "Move analytics workloads to a read replica or off-peak window; add statement/lock timeouts; enforce per-client connection pool limits with queueing; add pgbouncer-style pooling; index the transactions table to avoid full scans; alert at 70-80% connection utilization; automated kill of runaway queries.",
-   "criteria": "Gives at least three concrete, relevant prevention measures for connection exhaustion."},
-  {"id": "Q-34", "complexity": "HARD", "query": "Assess the blast radius of INC-1001 across services and quantify the user impact where possible.",
-   "expected_answer": "Directly: payment-api (timeouts, breaker open). Downstream: checkout-web (502s, at least 37 aborted checkouts in 2 minutes), notification-svc (queue 12->1204, messages dropped). Unaffected: auth-svc; search-svc and inventory-svc issues are separate. Quantified impact: 37+ failed checkouts, dropped notifications.",
-   "criteria": "Maps affected services correctly and cites the 37 aborted checkouts figure."},
-  {"id": "Q-35", "complexity": "HARD", "query": "If the analytics batch job cannot be moved, what architectural changes would mitigate its impact on payment-api?",
-   "expected_answer": "Separate resource pools: dedicated read replica for analytics, separate connection pools/priority classes, statement timeouts, workload management (rate limiting the job), CQRS-style split, materialized views to avoid full scans, and bulkheads so payment traffic keeps reserved connections.",
-   "criteria": "Proposes at least two architectural isolation measures (replica, pool separation, bulkheads, materialized views, etc.)."},
-  {"id": "Q-36", "complexity": "HARD", "query": "Determine whether the inventory-svc downtime is related to INC-1001 and identify its likely cause.",
-   "expected_answer": "Unrelated: inventory-svc went down at 09:45, 33+ minutes before the DB trigger, and its cause is network - 18% packet loss on the link to server-05 (INC-1003). The likely cause is a network/link failure, not the database.",
-   "criteria": "Concludes unrelated (predates INC-1001) and attributes it to the network packet loss on server-05 / INC-1003."}
+ {
+  "id": "Q-01",
+  "complexity": "SIMPLE",
+  "query": "What is the current CPU usage of payment-api?",
+  "expected_answer": "87% (latest metric at 10:25).",
+  "criteria": "States payment-api current CPU is 87%.",
+  "task_type": "metric_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-02",
+  "complexity": "SIMPLE",
+  "query": "Is payment-api currently healthy?",
+  "expected_answer": "No. It is degraded: database connection timeouts, circuit breaker opened at 10:23, open incident INC-1001 (HIGH).",
+  "criteria": "Says payment-api is NOT healthy and mentions at least one supporting signal (errors, circuit breaker, or INC-1001).",
+  "task_type": "health_check",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-03",
+  "complexity": "SIMPLE",
+  "query": "How many ERROR-level log entries occurred in the last hour?",
+  "expected_answer": "12 ERROR-level log entries between 09:25 and 10:25.",
+  "criteria": "Counts 12 ERROR log entries (11-13 acceptable if reasoning shown).",
+  "task_type": "count_aggregate",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-04",
+  "complexity": "SIMPLE",
+  "query": "What is the current memory utilization of payment-api?",
+  "expected_answer": "72%.",
+  "criteria": "States payment-api memory is 72%.",
+  "task_type": "metric_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-05",
+  "complexity": "SIMPLE",
+  "query": "Which services are currently down?",
+  "expected_answer": "inventory-svc is down (marked DOWN by load balancer at 09:50, no metrics since 09:45). payment-api is severely degraded (circuit breaker open) but not fully down.",
+  "criteria": "Identifies inventory-svc as down. Bonus for noting payment-api is degraded.",
+  "task_type": "health_check",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-06",
+  "complexity": "SIMPLE",
+  "query": "What is the current latency of payment-api?",
+  "expected_answer": "About 5230 ms (5.2 s), up from a ~110 ms baseline.",
+  "criteria": "States current payment-api latency around 5230ms / 5.2s.",
+  "task_type": "metric_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-07",
+  "complexity": "SIMPLE",
+  "query": "Which service has the highest memory usage right now?",
+  "expected_answer": "search-svc at 91%.",
+  "criteria": "Identifies search-svc with 91% memory.",
+  "task_type": "metric_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-08",
+  "complexity": "SIMPLE",
+  "query": "What is the severity of incident INC-1001?",
+  "expected_answer": "HIGH.",
+  "criteria": "States severity HIGH.",
+  "task_type": "incident_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-09",
+  "complexity": "SIMPLE",
+  "query": "Which service does incident INC-1001 affect?",
+  "expected_answer": "payment-api.",
+  "criteria": "States payment-api.",
+  "task_type": "incident_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-10",
+  "complexity": "SIMPLE",
+  "query": "What is the current CPU usage of auth-svc?",
+  "expected_answer": "34%.",
+  "criteria": "States auth-svc CPU is 34%.",
+  "task_type": "metric_lookup",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-11",
+  "complexity": "SIMPLE",
+  "query": "How many incidents are currently open?",
+  "expected_answer": "2 open incidents: INC-1001 (payment-api, HIGH) and INC-1003 (inventory-svc, MEDIUM).",
+  "criteria": "States 2 open incidents; ideally names INC-1001 and INC-1003.",
+  "task_type": "count_aggregate",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-12",
+  "complexity": "SIMPLE",
+  "query": "What is the current status of db-primary-01?",
+  "expected_answer": "Saturated: at its 200/200 connection ceiling, CPU 78%, slow queries around 2.1-2.4s.",
+  "criteria": "Mentions db-primary-01 is at max connections (200/200) and/or degraded with slow queries.",
+  "task_type": "health_check",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-13",
+  "complexity": "SIMPLE",
+  "query": "How many ERROR log entries did checkout-web produce?",
+  "expected_answer": "3 (two 'payment-api returned 502' and one 'checkout flow aborted for 37 users').",
+  "criteria": "States 3 checkout-web ERROR entries.",
+  "task_type": "count_aggregate",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-14",
+  "complexity": "SIMPLE",
+  "query": "Is auth-svc currently healthy?",
+  "expected_answer": "Yes. CPU 34%, memory 48%, latency ~45ms, no errors or incidents.",
+  "criteria": "Says auth-svc is healthy with normal metrics.",
+  "task_type": "health_check",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-15",
+  "complexity": "MEDIUM",
+  "query": "Why is payment-api experiencing high latency?",
+  "expected_answer": "Its database calls are timing out: db-primary-01 has slow queries (2.1s) and hit its 200-connection ceiling, so payment-api threads block on the connection pool (82%+ capacity), pushing latency from ~112ms to 5.2s.",
+  "criteria": "Attributes latency to database connection saturation / slow queries on db-primary-01, not to payment-api itself.",
+  "task_type": "diagnosis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-16",
+  "complexity": "MEDIUM",
+  "query": "Which service generated the most errors?",
+  "expected_answer": "payment-api with 4 ERROR entries (checkout-web has 3).",
+  "criteria": "Identifies payment-api as the top error producer (4 errors).",
+  "task_type": "count_aggregate",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-17",
+  "complexity": "MEDIUM",
+  "query": "What changed shortly before the increase in payment-api CPU usage?",
+  "expected_answer": "At 10:18 an ad-hoc analytics batch job (full scan of transactions) started on db-primary-01; DB connections then climbed and payment-api CPU rose from 38% to 87% as requests backed up.",
+  "criteria": "Points to the analytics batch job started at 10:18 on db-primary-01 (or DB connection climb) as the preceding change.",
+  "task_type": "diagnosis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-18",
+  "complexity": "MEDIUM",
+  "query": "Which server has the highest error rate?",
+  "expected_answer": "server-01 (payment-api) with 4 ERROR entries; server-02 has 3, server-05 has 2.",
+  "criteria": "Identifies server-01 as having the most errors.",
+  "task_type": "count_aggregate",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-19",
+  "complexity": "MEDIUM",
+  "query": "Is the database contributing to the payment-api latency?",
+  "expected_answer": "Yes. db-primary-01 shows slow queries (2.1-2.4s), reached max connections 200/200 at 10:22:40, and payment-api errors are database connection timeouts / 504s from the DB.",
+  "criteria": "Answers yes and cites DB evidence (slow queries, max connections, or timeout errors).",
+  "task_type": "diagnosis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-20",
+  "complexity": "MEDIUM",
+  "query": "Compare the current CPU usage of payment-api and checkout-web.",
+  "expected_answer": "payment-api 87% vs checkout-web 41%; payment-api is more than twice as high and climbing.",
+  "criteria": "States both values (87% and 41%) and compares them.",
+  "task_type": "comparison",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-21",
+  "complexity": "MEDIUM",
+  "query": "Which services were affected by the database issue?",
+  "expected_answer": "payment-api (timeouts, circuit breaker), checkout-web (502s, aborted checkouts), and notification-svc (retry queue overflow). inventory-svc and search-svc issues are unrelated.",
+  "criteria": "Lists payment-api and checkout-web (notification-svc a bonus) as affected by the DB issue.",
+  "task_type": "impact_assessment",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-22",
+  "complexity": "MEDIUM",
+  "query": "What pattern do you see in payment-api latency over the last hour?",
+  "expected_answer": "Stable ~110-118ms until 10:15, then a sharp climb: 640ms at 10:20 and ~5.2s by 10:22 onward - a step change coinciding with DB connection saturation.",
+  "criteria": "Describes flat baseline then sharp increase starting around 10:20.",
+  "task_type": "trend_analysis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-23",
+  "complexity": "MEDIUM",
+  "query": "Why is the notification-svc retry queue growing?",
+  "expected_answer": "Downstream payment failures: notifications retry against failing payment flows, so the queue grew from 12 to 1204 and overflowed at 10:24.",
+  "criteria": "Links queue growth to downstream payment-api/DB failures causing retries.",
+  "task_type": "diagnosis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-24",
+  "complexity": "MEDIUM",
+  "query": "Is search-svc memory usage a concern, and is it related to the payment incident?",
+  "expected_answer": "Yes, a concern: 91% and rising (85->88->91), risk of OOM. But it is unrelated to INC-1001 - it predates the DB issue and matches resolved incident INC-0997 (cache resize).",
+  "criteria": "Flags 91% memory as a concern AND states it is unrelated to the payment/DB incident.",
+  "task_type": "correlation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-25",
+  "complexity": "MEDIUM",
+  "query": "What is the relationship between db-primary-01 connection count and payment-api errors?",
+  "expected_answer": "Direct correlation: connections climbed 121->150->182->200; payment-api timeouts began as the pool neared saturation and errors peaked once 200/200 was reached at 10:22:40.",
+  "criteria": "Describes the correlation between rising DB connections and payment-api timeout errors.",
+  "task_type": "correlation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-26",
+  "complexity": "MEDIUM",
+  "query": "Which incident is related to the checkout errors?",
+  "expected_answer": "INC-1001 (payment-api, HIGH): checkout-web 502s are caused by payment-api failures from DB connection exhaustion.",
+  "criteria": "Links checkout-web errors to INC-1001 / the payment-api incident.",
+  "task_type": "correlation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-27",
+  "complexity": "HARD",
+  "query": "Analyze the payment-api incident and identify the most likely root cause.",
+  "expected_answer": "Root cause: the ad-hoc analytics batch job started at 10:18 on db-primary-01 (full scan of transactions) caused slow queries, which held connections longer, exhausting the 200-connection limit; payment-api then timed out, opened its circuit breaker, and checkout-web cascaded. The 09:20 deployment is a red herring - the service was healthy for an hour after it.",
+  "criteria": "Identifies the analytics batch job -> slow queries -> connection exhaustion chain as root cause (not payment-api code, not the deployment).",
+  "task_type": "root_cause_analysis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-28",
+  "complexity": "HARD",
+  "query": "Correlate the CPU, latency and database timeout data and explain what caused the outage.",
+  "expected_answer": "DB connections rose after the 10:18 batch job; slow queries (2.1s) appeared at 10:20:48; payment-api latency jumped 118ms->640ms->5.2s while its CPU climbed 38->87% from request backlog; timeouts started 10:21:32 and the DB hit 200/200 at 10:22:40. Causality flows from the database to the application: connection saturation, not app CPU, caused the outage.",
+  "criteria": "Correlates the three signals in time order and concludes DB connection saturation caused the outage (CPU rise is a symptom).",
+  "task_type": "root_cause_analysis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-29",
+  "complexity": "HARD",
+  "query": "Analyze the sequence of events and determine whether the problem originated in the application, database or infrastructure.",
+  "expected_answer": "The database. First anomaly is on db-primary-01 (batch job 10:18, slow query 10:20:48, max connections 10:22:40); application errors follow it. Infrastructure (network) is only implicated in the separate inventory-svc issue.",
+  "criteria": "Concludes the origin is the database layer, with evidence ordering; distinguishes the unrelated inventory-svc network issue.",
+  "task_type": "root_cause_analysis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-30",
+  "complexity": "HARD",
+  "query": "Given the available logs and metrics, identify the root cause and recommend remediation steps.",
+  "expected_answer": "Root cause: analytics batch job exhausting db-primary-01 connections via slow full-table scans. Remediation: kill/reschedule the batch job off-peak or to a read replica, add statement timeouts and query limits, raise/partition connection pools, add circuit-breaker backoff, alert on connection-pool utilization.",
+  "criteria": "Identifies the DB connection exhaustion root cause AND gives at least two concrete remediation steps.",
+  "task_type": "remediation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-31",
+  "complexity": "HARD",
+  "query": "Build a timeline of the cascading failure from first symptom to circuit breaker opening.",
+  "expected_answer": "10:18 batch job starts; 10:20:11 payment-api pool 82%; 10:20:48 DB slow query 2.1s; 10:21:32-33 payment-api DB timeouts/504; 10:21:51 checkout-web 502; 10:22:07 notification queue 1204; 10:22:40 DB max connections 200/200; 10:22:55 more timeouts; 10:23:05 checkout 502; 10:23:15 circuit breaker opens.",
+  "criteria": "Produces a correct time-ordered chain from the 10:18 batch job (or 10:20 pool warning) to the 10:23:15 circuit breaker, including DB and checkout events.",
+  "task_type": "timeline",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-32",
+  "complexity": "HARD",
+  "query": "Are the search-svc memory issue and the payment-api incident related? Explain with evidence.",
+  "expected_answer": "No. search-svc memory was already 85% at 09:40, before the 10:18 trigger; it runs on server-04 with no DB dependency in the failure chain, and matches resolved incident INC-0997 (cache resize). The trends are independent.",
+  "criteria": "Concludes unrelated, citing timing (pre-existing trend) and/or INC-0997 as evidence.",
+  "task_type": "correlation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-33",
+  "complexity": "HARD",
+  "query": "What remediation steps would prevent recurrence of the database connection exhaustion?",
+  "expected_answer": "Move analytics workloads to a read replica or off-peak window; add statement/lock timeouts; enforce per-client connection pool limits with queueing; add pgbouncer-style pooling; index the transactions table to avoid full scans; alert at 70-80% connection utilization; automated kill of runaway queries.",
+  "criteria": "Gives at least three concrete, relevant prevention measures for connection exhaustion.",
+  "task_type": "remediation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-34",
+  "complexity": "HARD",
+  "query": "Assess the blast radius of INC-1001 across services and quantify the user impact where possible.",
+  "expected_answer": "Directly: payment-api (timeouts, breaker open). Downstream: checkout-web (502s, at least 37 aborted checkouts in 2 minutes), notification-svc (queue 12->1204, messages dropped). Unaffected: auth-svc; search-svc and inventory-svc issues are separate. Quantified impact: 37+ failed checkouts, dropped notifications.",
+  "criteria": "Maps affected services correctly and cites the 37 aborted checkouts figure.",
+  "task_type": "impact_assessment",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-35",
+  "complexity": "HARD",
+  "query": "If the analytics batch job cannot be moved, what architectural changes would mitigate its impact on payment-api?",
+  "expected_answer": "Separate resource pools: dedicated read replica for analytics, separate connection pools/priority classes, statement timeouts, workload management (rate limiting the job), CQRS-style split, materialized views to avoid full scans, and bulkheads so payment traffic keeps reserved connections.",
+  "criteria": "Proposes at least two architectural isolation measures (replica, pool separation, bulkheads, materialized views, etc.).",
+  "task_type": "remediation",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-36",
+  "complexity": "HARD",
+  "query": "Determine whether the inventory-svc downtime is related to INC-1001 and identify its likely cause.",
+  "expected_answer": "Unrelated: inventory-svc went down at 09:45, 33+ minutes before the DB trigger, and its cause is network - 18% packet loss on the link to server-05 (INC-1003). The likely cause is a network/link failure, not the database.",
+  "criteria": "Concludes unrelated (predates INC-1001) and attributes it to the network packet loss on server-05 / INC-1003.",
+  "task_type": "root_cause_analysis",
+  "workload": "ops-chat"
+ },
+ {
+  "id": "Q-37",
+  "complexity": "SIMPLE",
+  "task_type": "alert_classification",
+  "workload": "alert-triage",
+  "query": "Classify this alert into exactly one category from [database, network, application, capacity, security] and reply with the category only: \"db-primary-01 (db-01) ERROR: Max connections reached (200/200)\"",
+  "expected_answer": "database",
+  "criteria": "Answer is exactly the label 'database'.",
+  "validator": {
+   "type": "label",
+   "allowed": [
+    "database",
+    "network",
+    "application",
+    "capacity",
+    "security"
+   ],
+   "expected": "database"
+  }
+ },
+ {
+  "id": "Q-38",
+  "complexity": "SIMPLE",
+  "task_type": "alert_classification",
+  "workload": "alert-triage",
+  "query": "Classify this alert into exactly one category from [database, network, application, capacity, security] and reply with the category only: \"network-lb-01 (net-01) ERROR: Packet loss 18% on link to server-05\"",
+  "expected_answer": "network",
+  "criteria": "Answer is exactly the label 'network'.",
+  "validator": {
+   "type": "label",
+   "allowed": [
+    "database",
+    "network",
+    "application",
+    "capacity",
+    "security"
+   ],
+   "expected": "network"
+  }
+ },
+ {
+  "id": "Q-39",
+  "complexity": "SIMPLE",
+  "task_type": "alert_classification",
+  "workload": "alert-triage",
+  "query": "Classify this alert into exactly one category from [database, network, application, capacity, security] and reply with the category only: \"search-svc (server-04) WARN: Memory usage at 91%\"",
+  "expected_answer": "capacity",
+  "criteria": "Answer is exactly the label 'capacity'.",
+  "validator": {
+   "type": "label",
+   "allowed": [
+    "database",
+    "network",
+    "application",
+    "capacity",
+    "security"
+   ],
+   "expected": "capacity"
+  }
+ },
+ {
+  "id": "Q-40",
+  "complexity": "SIMPLE",
+  "task_type": "alert_classification",
+  "workload": "alert-triage",
+  "query": "Classify this alert into exactly one category from [database, network, application, capacity, security] and reply with the category only: \"checkout-web (server-02) ERROR: payment-api returned 502\"",
+  "expected_answer": "application",
+  "criteria": "Answer is exactly the label 'application'.",
+  "validator": {
+   "type": "label",
+   "allowed": [
+    "database",
+    "network",
+    "application",
+    "capacity",
+    "security"
+   ],
+   "expected": "application"
+  }
+ },
+ {
+  "id": "Q-41",
+  "complexity": "SIMPLE",
+  "task_type": "log_extraction",
+  "workload": "log-pipeline",
+  "query": "Extract this log line into a JSON object with keys service, host, level, latency_ms (integer or null). Reply with JSON only: \"2026-08-18T10:21:32 [ERROR] payment-api (server-01): Database connection timeout latency=5230ms\"",
+  "expected_answer": "{\"service\":\"payment-api\",\"host\":\"server-01\",\"level\":\"ERROR\",\"latency_ms\":5230}",
+  "criteria": "Valid JSON with service=payment-api, host=server-01, level=ERROR, latency_ms=5230.",
+  "validator": {
+   "type": "json_schema",
+   "schema": {
+    "type": "object",
+    "required": [
+     "service",
+     "host",
+     "level",
+     "latency_ms"
+    ],
+    "properties": {
+     "service": {
+      "type": "string"
+     },
+     "host": {
+      "type": "string"
+     },
+     "level": {
+      "enum": [
+       "INFO",
+       "WARN",
+       "ERROR"
+      ]
+     },
+     "latency_ms": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    }
+   },
+   "expected": {
+    "service": "payment-api",
+    "host": "server-01",
+    "level": "ERROR",
+    "latency_ms": 5230
+   }
+  }
+ },
+ {
+  "id": "Q-42",
+  "complexity": "SIMPLE",
+  "task_type": "log_extraction",
+  "workload": "log-pipeline",
+  "query": "Extract this log line into a JSON object with keys service, host, level, latency_ms (integer or null). Reply with JSON only: \"2026-08-18T09:46:00 [ERROR] network-lb-01 (net-01): Packet loss 18% on link to server-05\"",
+  "expected_answer": "{\"service\":\"network-lb-01\",\"host\":\"net-01\",\"level\":\"ERROR\",\"latency_ms\":null}",
+  "criteria": "Valid JSON with service=network-lb-01, host=net-01, level=ERROR, latency_ms=null.",
+  "validator": {
+   "type": "json_schema",
+   "schema": {
+    "type": "object",
+    "required": [
+     "service",
+     "host",
+     "level",
+     "latency_ms"
+    ],
+    "properties": {
+     "service": {
+      "type": "string"
+     },
+     "host": {
+      "type": "string"
+     },
+     "level": {
+      "enum": [
+       "INFO",
+       "WARN",
+       "ERROR"
+      ]
+     },
+     "latency_ms": {
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    }
+   },
+   "expected": {
+    "service": "network-lb-01",
+    "host": "net-01",
+    "level": "ERROR",
+    "latency_ms": null
+   }
+  }
+ },
+ {
+  "id": "Q-43",
+  "complexity": "MEDIUM",
+  "task_type": "log_extraction",
+  "workload": "log-pipeline",
+  "query": "From the incident record for INC-1003, produce a JSON object with keys incident_id, service, severity, status, and affected_host (the host named in the description, or null). Reply with JSON only.",
+  "expected_answer": "{\"incident_id\":\"INC-1003\",\"service\":\"inventory-svc\",\"severity\":\"MEDIUM\",\"status\":\"OPEN\",\"affected_host\":\"server-05\"}",
+  "criteria": "Valid JSON: INC-1003, inventory-svc, MEDIUM, OPEN, server-05.",
+  "validator": {
+   "type": "json_schema",
+   "schema": {
+    "type": "object",
+    "required": [
+     "incident_id",
+     "service",
+     "severity",
+     "status",
+     "affected_host"
+    ],
+    "properties": {
+     "incident_id": {
+      "type": "string"
+     },
+     "service": {
+      "type": "string"
+     },
+     "severity": {
+      "enum": [
+       "HIGH",
+       "MEDIUM",
+       "LOW"
+      ]
+     },
+     "status": {
+      "enum": [
+       "OPEN",
+       "RESOLVED"
+      ]
+     },
+     "affected_host": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    }
+   },
+   "expected": {
+    "incident_id": "INC-1003",
+    "service": "inventory-svc",
+    "severity": "MEDIUM",
+    "status": "OPEN",
+    "affected_host": "server-05"
+   }
+  }
+ },
+ {
+  "id": "Q-44",
+  "complexity": "MEDIUM",
+  "task_type": "sql_generation",
+  "workload": "analytics-copilot",
+  "query": "Using the warehouse schema provided, write one SQL query that returns the number of OPEN incidents per severity (columns: severity, n). Reply with the SQL only.",
+  "expected_answer": "SELECT severity, COUNT(*) AS n FROM incidents WHERE status='OPEN' GROUP BY severity",
+  "criteria": "SQL executes and returns HIGH=1, MEDIUM=1.",
+  "validator": {
+   "type": "sql",
+   "reference_sql": "SELECT severity, COUNT(*) FROM incidents WHERE status='OPEN' GROUP BY severity"
+  }
+ },
+ {
+  "id": "Q-45",
+  "complexity": "MEDIUM",
+  "task_type": "sql_generation",
+  "workload": "analytics-copilot",
+  "query": "Using the warehouse schema provided, write one SQL query that returns each service with its number of ERROR-level log rows, most errors first (columns: service, errors). Reply with the SQL only.",
+  "expected_answer": "SELECT service, COUNT(*) AS errors FROM logs WHERE level='ERROR' GROUP BY service ORDER BY errors DESC",
+  "criteria": "SQL executes; payment-api 4, checkout-web 3, inventory-svc 2, db-primary-01 1, network-lb-01 1, notification-svc 1.",
+  "validator": {
+   "type": "sql",
+   "reference_sql": "SELECT service, COUNT(*) FROM logs WHERE level='ERROR' GROUP BY service"
+  }
+ },
+ {
+  "id": "Q-46",
+  "complexity": "HARD",
+  "task_type": "sql_generation",
+  "workload": "analytics-copilot",
+  "query": "Using the warehouse schema provided, write one SQL query that returns, for each service, its latest metrics row's cpu_percent (columns: service, cpu_percent), using the maximum ts per service. Reply with the SQL only.",
+  "expected_answer": "SELECT m.service, m.cpu_percent FROM metrics m JOIN (SELECT service, MAX(ts) AS ts FROM metrics GROUP BY service) l ON l.service=m.service AND l.ts=m.ts",
+  "criteria": "SQL executes and returns the latest cpu_percent per service (payment-api 87, checkout-web 41, auth-svc 34, search-svc 52, notification-svc 44, db-primary-01 78, inventory-svc NULL).",
+  "validator": {
+   "type": "sql",
+   "reference_sql": "SELECT m.service, m.cpu_percent FROM metrics m JOIN (SELECT service, MAX(ts) AS ts FROM metrics GROUP BY service) l ON l.service=m.service AND l.ts=m.ts"
+  }
+ },
+ {
+  "id": "Q-47",
+  "complexity": "SIMPLE",
+  "task_type": "docs_qa",
+  "workload": "kb-search",
+  "query": "According to the runbook, what is the first step when db-primary-01 reports max connections reached?",
+  "expected_answer": "Identify the top connection consumers with pg_stat_activity grouped by application_name (RB-101 step 1).",
+  "criteria": "Mentions pg_stat_activity / identifying top connection consumers as the first step."
+ },
+ {
+  "id": "Q-48",
+  "complexity": "SIMPLE",
+  "task_type": "docs_qa",
+  "workload": "kb-search",
+  "query": "Per the runbook, should we restart the payment-api pods while its circuit breaker is open?",
+  "expected_answer": "No. RB-207 says do not restart payment-api pods while the breaker is open; the database is the failing dependency and a restart only resets the failure count.",
+  "criteria": "Says no, citing that the DB is the failing dependency / restart only resets the breaker."
+ },
+ {
+  "id": "Q-49",
+  "complexity": "MEDIUM",
+  "task_type": "docs_qa",
+  "workload": "kb-search",
+  "query": "How long do we have to post a status-page update for INC-1001, and who must be paged if the primary on-call does not acknowledge within 15 minutes?",
+  "expected_answer": "INC-1001 is HIGH: status page within 20 minutes; the secondary on-call is paged after 15 minutes without acknowledgement (engineering manager after 30).",
+  "criteria": "States 20 minutes for the status page and the secondary on-call after 15 minutes."
+ },
+ {
+  "id": "Q-50",
+  "complexity": "MEDIUM",
+  "task_type": "ticket_summary",
+  "workload": "ticket-enrichment",
+  "query": "Summarize ticket TCK-5521 in at most three sentences for the incident commander, including the customer impact, the deadline and what the requester needs.",
+  "expected_answer": "Support reports customers failing at the payment step since ~10:20 (41 chats, 9 calls, 6 refund requests, some double charges) on web and mobile; checkout-web is returning 502 with the payments breaker open. They need root cause, an ETA and retry guidance, plus a go/no-go by 10:45 on the 11:00 marketing email.",
+  "criteria": "Mentions the checkout failures/customer impact, the 10:45 go/no-go deadline for the 11:00 email, and the ask (root cause, ETA, guidance)."
+ },
+ {
+  "id": "Q-51",
+  "complexity": "MEDIUM",
+  "task_type": "ticket_summary",
+  "workload": "ticket-enrichment",
+  "query": "Summarize ticket TCK-5522 in two sentences and list what the requester is asking for.",
+  "expected_answer": "The data team ran the monthly reconciliation full-scan ad hoc against db-primary-01 at 10:18 because the replica lagged, coinciding with the payment incident. They ask for a recurring 02:00 UTC schedule on db-replica-02, a statement-timeout exemption for that window, and advice on replacing the scan with a materialized view; a platform engineer must set the cron.",
+  "criteria": "Captures the ad-hoc run at 10:18 on the primary and lists the schedule on the replica, the timeout exemption and the materialized-view question."
+ },
+ {
+  "id": "Q-52",
+  "complexity": "MEDIUM",
+  "task_type": "incident_summary",
+  "workload": "ops-chat",
+  "query": "Write a three-sentence status-page update for INC-1001 based on the current telemetry.",
+  "expected_answer": "Payments are degraded: payment-api is timing out against its database and its circuit breaker is open, so checkout may fail with errors. The cause is database connection saturation on db-primary-01 following an ad-hoc analytics job; engineers are working to relieve the database. Other services (auth, search) are operating normally; next update within 20 minutes.",
+  "criteria": "Communicates checkout/payment degradation, points to the database connection saturation, and avoids blaming the deployment or unrelated services."
+ },
+ {
+  "id": "Q-53",
+  "complexity": "HARD",
+  "task_type": "root_cause_analysis",
+  "workload": "ops-chat",
+  "query": "Did the payment-api v2.4.1 deployment at 09:20 cause the outage? Answer yes or no first, then justify with timestamps.",
+  "expected_answer": "No. payment-api passed health checks at 09:35, 10:05 and 10:19 after the 09:20 rollout; the first anomaly is the 10:18 analytics batch job on db-primary-01, followed by slow queries (10:20:48), timeouts (10:21:32) and max connections (10:22:40). The deployment is a red herring.",
+  "criteria": "Answers NO and cites the clean health checks after 09:20 and the 10:18 batch job as the actual trigger."
+ },
+ {
+  "id": "Q-54",
+  "complexity": "SIMPLE",
+  "task_type": "metric_lookup",
+  "workload": "ops-chat",
+  "paraphrase_of": "Q-01",
+  "query": "What's the CPU utilization on payment-api right now?",
+  "expected_answer": "87% (latest metric at 10:25).",
+  "criteria": "States payment-api current CPU is 87%."
+ },
+ {
+  "id": "Q-55",
+  "complexity": "SIMPLE",
+  "task_type": "health_check",
+  "workload": "ops-chat",
+  "paraphrase_of": "Q-14",
+  "query": "Is the auth service healthy at the moment?",
+  "expected_answer": "Yes. CPU 34%, memory 48%, latency ~45ms, no errors or incidents.",
+  "criteria": "Says auth-svc is healthy with normal metrics."
+ },
+ {
+  "id": "Q-56",
+  "complexity": "MEDIUM",
+  "task_type": "diagnosis",
+  "workload": "ops-chat",
+  "paraphrase_of": "Q-15",
+  "query": "What is causing the high latency on payment-api?",
+  "expected_answer": "Database connection saturation on db-primary-01 (slow queries at 2.1s, 200/200 connections) blocks payment-api's pool, pushing latency to 5.2s.",
+  "criteria": "Attributes latency to database connection saturation / slow queries on db-primary-01."
+ },
+ {
+  "id": "Q-57",
+  "complexity": "SIMPLE",
+  "task_type": "incident_lookup",
+  "workload": "ops-chat",
+  "paraphrase_of": "Q-08",
+  "query": "How severe is INC-1001?",
+  "expected_answer": "HIGH.",
+  "criteria": "States severity HIGH."
+ },
+ {
+  "id": "Q-58",
+  "complexity": "HARD",
+  "task_type": "remediation",
+  "workload": "ops-chat",
+  "query": "Using both the runbooks and the telemetry, give the incident commander an ordered action plan for INC-1001 right now, and state explicitly whether a rollback of payment-api v2.4.1 is warranted.",
+  "expected_answer": "1) Follow RB-101: identify and terminate the analytics full scan on db-primary-01 (pg_stat_activity / pg_terminate_backend), pause the batch job and move it to db-replica-02 off-peak; 2) do not restart payment-api (RB-207) - let the breaker close once the DB recovers; 3) post the status-page update within 20 minutes (POL-9) and answer TCK-5521; 4) rollback is NOT warranted (RB-311): the service was healthy for an hour after the 09:20 rollout and the trigger was the 10:18 batch job.",
+  "criteria": "Orders DB relief first, explicitly advises against restarting payment-api and against rollback with the timing justification, and mentions the status-page duty."
+ }
 ]

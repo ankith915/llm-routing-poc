@@ -1,10 +1,11 @@
-"""CLI: run the batch experiment and print the comparison report.
+"""CLI: run the evaluation and print the comparison report.
 
 Usage:
-  python run_experiment.py                      # quick demo subset (see models.yaml)
-  python run_experiment.py --full               # every test query
-  python run_experiment.py --limit 9            # an explicit stratified subset
-  python run_experiment.py --compression both   # Headroom A/B: each job on + off
+  python run_experiment.py                        # quick stratified subset
+  python run_experiment.py --full                 # every query in the set
+  python run_experiment.py --limit 9              # an explicit stratified subset
+  python run_experiment.py --strategies none optimized
+  python run_experiment.py --compression both     # compression A/B: each job on + off
 
 The compression A/B needs headroom-ai (pip install -r requirements-compression.txt).
 It is local-only - the dependency tree is over the serverless size limit - so
@@ -30,7 +31,9 @@ async def main(args):
     pool = ClientPool.from_settings(settings)
     await storage.init()
     n = len(telemetry.select_queries(limit))
-    print(f"Running {n} test queries x 3 strategies x compression {list(modes)} "
+    strategies = args.strategies or experiment.STRATEGIES
+    print(f"Running {n} queries x {len(strategies)} strategies ({', '.join(strategies)}) "
+          f"x compression {list(modes)} "
           f"(concurrency {settings.experiment_concurrency}, store: {storage.backend()})...")
 
     def progress(s):
@@ -39,7 +42,8 @@ async def main(args):
 
     # A short step budget only affects how often progress is reported.
     final = await experiment.run(settings, pool, limit=limit, budget_s=5,
-                                 on_progress=progress, compressions=modes)
+                                 on_progress=progress, compressions=modes,
+                                 strategies=tuple(args.strategies) if args.strategies else None)
     print("\n")
     print(experiment.format_report(final["result"]))
     # Individual call failures are retried and failed over inside the pipeline,
@@ -59,4 +63,6 @@ if __name__ == "__main__":
                    help="run every test query instead of the demo subset")
     p.add_argument("--compression", choices=sorted(experiment.COMPRESSION_CHOICES),
                    default="off", help="context compression: off, headroom, or both (A/B)")
+    p.add_argument("--strategies", nargs="+", default=None,
+                   help=f"strategies to run (default: all of {' '.join(experiment.STRATEGIES)})")
     asyncio.run(main(p.parse_args()))

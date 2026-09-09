@@ -10,3 +10,5 @@ Dockerfile
 docker-compose.yml
 backend/data/results.json
 requirements-compression.txt
+backend/data/kv.json
+docs/superpowers/
